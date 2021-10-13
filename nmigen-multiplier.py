@@ -87,58 +87,99 @@ class Multiplier(Elaboratable):
 
         return m
 
+
 if __name__ == "__main__":
-    top = Multiplier(bits=64, register=False)
+    top = Multiplier(bits=64, min_bits=8, register=False)
     with open("multiplier.v", "w") as f:
         f.write(verilog.convert(top, ports = [top.a, top.b, top.o], strip_internal_attrs=True))
 
-    top = Multiplier(bits=64, min_bits=4, register=True)
+    top = Multiplier(bits=64, min_bits=8, register=True)
     with open("multiplier_pipelined.v", "w") as f:
         f.write(verilog.convert(top, ports = [top.a, top.b, top.o], strip_internal_attrs=True))
+    print("done")
 
 
-class TestSum(unittest.TestCase):
+cases = [
+        0x0000000000000000,
+        0x0000000000000001,
+        0x0000000011111111,
+        0x000000007fffffff,
+        0x0000000080000000,
+        0x00000000ffffffff,
+        0x0000000100000000,
+        0x0001020304050607,
+        0x1111111111111111,
+        0x7fffffffffffffff,
+        0x8000000000000000,
+        0x8888888888888888,
+        0xffffffff00000000,
+        0xffffffffffffffff,
+        0X00ff00ff00ff00ff,
+        0Xff00ff00ff00ff00,
+        0xa5a5a5a5a5a5a5a5,
+]
+
+class TestCase(unittest.TestCase):
     def setUp(self):
-        self.dut = Multiplier(64)
-        self.dut_sync = Multiplier(64, register=True)
+        self.dut = Multiplier(64, min_bits=16, register=False)
 
-    def do_one_comb(self):
-        rand_a = random.getrandbits(64)
-        rand_b = random.getrandbits(64)
-        yield self.dut.a.eq(rand_a)
-        yield self.dut.b.eq(rand_b)
+    def do_one_comb(self, a, b):
+        yield self.dut.a.eq(a)
+        yield self.dut.b.eq(b)
         yield Settle()
         res = (yield self.dut.o)
-        self.assertEqual(res, rand_a * rand_b)
+        self.assertEqual(res, a * b)
 
-    def do_one_sync(self, cycles=4):
-        rand_a = random.getrandbits(64)
-        rand_b = random.getrandbits(64)
-        yield self.dut_sync.a.eq(rand_a)
-        yield self.dut_sync.b.eq(rand_b)
-        yield
-        yield
-        yield
-        yield
-        res = (yield self.dut_sync.o)
-        self.assertEqual(res, rand_a * rand_b)
-
-    def test(self):
+    def test_cases(self):
         def bench():
-            for i in range(1000):
-                yield from self.do_one_comb()
+            for (a, b) in [(x, y) for x in cases for y in cases]:
+                print("a %x b %x" % (a, b))
+                rand_a = random.getrandbits(64)
+                rand_b = random.getrandbits(64)
+                yield from self.do_one_comb(rand_a, rand_b)
 
         sim = Simulator(self.dut)
         sim.add_process(bench)
         with sim.write_vcd("test.vcd"):
             sim.run()
 
-    def test_sync(self):
+    def test_random(self):
+        def bench():
+            for i in range(1000):
+                rand_a = random.getrandbits(64)
+                rand_b = random.getrandbits(64)
+                yield from self.do_one_comb(rand_a, rand_b)
+
+        sim = Simulator(self.dut)
+        sim.add_process(bench)
+        with sim.write_vcd("test.vcd"):
+            sim.run()
+
+
+class PipelinedTestCase(unittest.TestCase):
+    def setUp(self):
+        self.dut = Multiplier(64, min_bits=16, register=True)
+
+    def do_one_sync(self, cycles=4):
+        rand_a = random.getrandbits(64)
+        rand_b = random.getrandbits(64)
+        yield self.dut.a.eq(rand_a)
+        yield self.dut.b.eq(rand_b)
+
+        for i in range(cycles):
+            yield
+            yield self.dut.a.eq(0)
+            yield self.dut.b.eq(0)
+
+        res = (yield self.dut.o)
+        self.assertEqual(res, rand_a * rand_b)
+
+    def test(self):
         def bench():
             for i in range(1000):
                 yield from self.do_one_sync()
 
-        sim = Simulator(self.dut_sync)
+        sim = Simulator(self.dut)
         sim.add_clock(1e-9)
         sim.add_sync_process(bench)
         with sim.write_vcd("test.vcd"):
