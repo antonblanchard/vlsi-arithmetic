@@ -4,7 +4,7 @@ import math
 import unittest
 import random
 
-from nmigen import Elaboratable, Module, Signal, Cat, Const
+from nmigen import Elaboratable, Module, Signal, Cat, Const, Instance
 from nmigen.back import verilog
 from nmigen.sim import Simulator, Settle
 
@@ -108,91 +108,123 @@ class BoothDadda(Elaboratable):
     def elaborate(self, platform):
         m = Module()
 
-        multiplier = Signal(self.bits+1)
-        multiplicand = Signal(self.bits+1)
+#        multiplier = Signal(self.bits+2)
+#        multiplicand = Signal(self.bits+2)
 
-        # Add a zero in the LSB for both multiplicand and multiplier
-        m.d.comb += [
-            multiplier.eq(Cat(0, self.a)),
-            multiplicand.eq(Cat(0, self.b)),
-        ]
+#        # Add a zero in the LSB for both multiplicand and multiplier
+#        m.d.comb += [
+#            multiplier.eq(Cat(0, self.a)),
+#            multiplicand.eq(Cat(0, self.b)),
+#        ]
+        multiplier = self.a
+        multiplicand = self.b
 
         # Create a list of lists to store our partial products
-        partial_products = [[] for i in range(self.bits*2)]
+        partial_products = [[] for i in range(len(multiplier)+len(multiplicand))]
 
-        # Step through the multiplier 2 bits at a time
-        for off_b in range(0, self.bits, 2):
-            # Select three bits of the multiplier at a time
-            block = multiplier[off_b:off_b+3]
+#        # Step through the multiplier 2 bits at a time
+#        for off_b in range(0, len(multiplier), 2):
+#            # Select three bits of the multiplier at a time
+#            block = multiplier[off_b:off_b+3]
+#
+#            # Step through the multiplicand 1 bit at a time
+#            for off_m in range(len(multiplicand)):
+#                #mand = multiplicand[off_m:off_m+2]
+#
+#                o = Signal()
+#                partial_products[off_b + off_m].append(o)
+#
+#                booth = BoothRadix4()
+#                name = "booth_b%d_m%d" % (off_b, off_m)
+#                m.submodules[name] = booth
+#
+#                m.d.comb += [
+#                    booth.block.eq(block),
+#                    booth.multiplicand.eq(multiplicand[off_m:off_m+2]),
+#                    o.eq(booth.o),
+#                 ]
 
-            # Step through the multiplicand 1 bit at a time
-            for off_m in range(self.bits+1):
-                #mand = multiplicand[off_m:off_m+2]
-
+        for off_b in range(len(multiplier)):
+            for off_m in range(len(multiplicand)):
                 o = Signal()
                 partial_products[off_b + off_m].append(o)
+                m.d.comb += o.eq(multiplier[off_b] & multiplicand[off_m])
 
-                booth = BoothRadix4()
-                name = "booth_b%d_m%d" % (off_b, off_m)
-                m.submodules[name] = booth
-
-                m.d.comb += [
-                    booth.block.eq(block),
-                    booth.multiplicand.eq(multiplicand[off_m:off_m+2]),
-                    o.eq(booth.o),
-                 ]
 
         # Dadda reduction
-        dadda_heights = self._calc_dadda_heights(self.bits//2)
+        #dadda_heights = self._calc_dadda_heights(min(len(multiplier), len(multiplicand) // 2))
+        dadda_heights = self._calc_dadda_heights(min(len(multiplier), len(multiplicand)))
 
         iteration = 0
 
         # Loop until we have a depth of 2
         while max(len(x) for x in partial_products) > 2:
             for offset in range(len(partial_products)):
+                subiteration = 0
                 while len(partial_products[offset]) > dadda_heights[0]:
                     s = Signal()
                     c = Signal()
 
                     # Full adder of three bits if there are 2 or more extra elements
                     if len(partial_products[offset]) > (1 + dadda_heights[0]):
-                        fa = FullAdder()
-                        name = "dadda_fa_%d_%d" % (iteration, offset)
-                        m.submodules[name] = fa
+                        #fa = FullAdder()
+                        #name = "dadda_fa_%d_%d_%d" % (iteration, offset, subiteration)
+                        #m.submodules[name] = fa
 
                         i0 = partial_products[offset].pop(0)
                         i1 = partial_products[offset].pop(0)
                         i2 = partial_products[offset].pop(0)
 
-                        m.d.comb += [
-                            fa.a.eq(i0),
-                            fa.b.eq(i1),
-                            fa.carry_in.eq(i2),
+                        #m.d.comb += [
+                            #fa.a.eq(i0),
+                            #fa.b.eq(i1),
+                            #fa.carry_in.eq(i2),
 
-                            s.eq(fa.sum),
-                            c.eq(fa.carry_out),
-                        ]
+                            #s.eq(fa.sum),
+                            #c.eq(fa.carry_out),
+                        #]
+
+                        fa = Instance(
+                            "FA",
+                            i_a=i0,
+                            i_b=i1,
+                            i_carry_in=c,
+                            o_sum=s,
+                            o_carry_out=c,
+                        )
+
+                        m.submodules += fa
 
                     # Half adder of two bits if there is 1 extra element
                     else:
-                        ha = HalfAdder()
-                        name = "dadda_ha_%d_%d" % (iteration, offset)
-                        m.submodules[name] = ha
+                        #ha = HalfAdder()
+                        #name = "dadda_ha_%d_%d_%d" % (iteration, offset, subiteration)
+                        #m.submodules[name] = ha
 
                         i0 = partial_products[offset].pop(0)
                         i1 = partial_products[offset].pop(0)
 
-                        m.d.comb += [
-                            ha.a.eq(i0),
-                            ha.b.eq(i1),
+                        #m.d.comb += [
+                            #ha.a.eq(i0),
+                            #ha.b.eq(i1),
 
-                            s.eq(ha.sum),
-                            c.eq(ha.carry_out),
-                        ]
+                            #s.eq(ha.sum),
+                            #c.eq(ha.carry_out),
+                        #]
+
+                        ha = Instance(
+                            "HA",
+                            i_a=i0,
+                            i_b=i1,
+                            o_sum=s,
+                            o_carry_out=c,
+                        )
 
                     # result goes in bottom of column and carry goes in the top of the next column
                     partial_products[offset].append(s)
                     partial_products[offset+1].insert(0, c)
+
+                    subiteration = subiteration + 1
 
             dadda_heights.pop(0)
             iteration = iteration + 1
@@ -206,13 +238,27 @@ class BoothDadda(Elaboratable):
 
         m.d.comb += self.o.eq(r1+r2)
 
+        print("done")
+
         return m
 
 
-if __name__ == "__main__":
-    top = BoothDadda(bits=4)
+def doit():
+    top = BoothDadda(bits=20)
     with open("booth.v", "w") as f:
         f.write(verilog.convert(top, ports = [top.a, top.b, top.o], strip_internal_attrs=True))
+
+import cProfile
+import re
+cProfile.run('doit()')
+exit(1)
+
+if __name__ == "__main__":
+    top = BoothDadda(bits=32)
+    with open("booth.v", "w") as f:
+        f.write(verilog.convert(top, ports = [top.a, top.b, top.o], strip_internal_attrs=True))
+
+
 
 cases = [
         0x0000000000000000,
@@ -236,7 +282,7 @@ cases = [
 
 class TestCase(unittest.TestCase):
     def setUp(self):
-        self.dut = BoothDadda(4)
+        self.dut = BoothDadda(16)
 
     def do_one_comb(self, a, b):
         yield self.dut.a.eq(a)
@@ -261,8 +307,10 @@ class TestCase(unittest.TestCase):
     def test_random(self):
         def bench():
             for i in range(1000):
-                rand_a = 2
-                rand_b = 1
+                #rand_a = 3
+                #rand_b = 2
+                rand_a = random.getrandbits(16)
+                rand_b = random.getrandbits(16)
                 yield from self.do_one_comb(rand_a, rand_b)
 
         sim = Simulator(self.dut)
