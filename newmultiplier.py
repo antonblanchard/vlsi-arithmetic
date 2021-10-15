@@ -53,7 +53,10 @@ class SKY130(Elaboratable):
 
         self.m.submodules += andgate
 
-    def _generate_booth_encoder(self, block, multiplicand, o):
+    def _generate_booth_encoder(self, block, multiplicand, o, name):
+        pass
+
+    def _generate_booth_sign(self, block, sign, notsign):
         pass
 
 
@@ -86,7 +89,7 @@ class Multiplier(Elaboratable):
     def _generate_and(self, a, b, o):
         self.m.d.comb += o.eq(a & b) 
 
-    def _generate_booth_encoder(self, block, multiplicand, o):
+    def _generate_booth_encoder(self, block, multiplicand, o, name):
         with self.m.Switch(block):
             with self.m.Case(0b000):
                 self.m.d.comb += o.eq(0)
@@ -105,6 +108,12 @@ class Multiplier(Elaboratable):
             with self.m.Case(0b111):
                 self.m.d.comb += o.eq(0)
 
+    def _generate_booth_sign(self, block, sign, notsign):
+        self.m.d.comb += [
+            sign.eq(block[2]),
+            notsign.eq(~block[2]),
+            ]
+
     def elaborate(self, platform):
         self.m = Module()
 
@@ -113,6 +122,66 @@ class Multiplier(Elaboratable):
         self._final_adder()
 
         return self.m
+
+class BoothRadix4(Multiplier):
+    def _gen_partial_products(self):
+        # Double check this
+        self._partial_products = [[] for i in range((self._bits+1)*2)]
+
+        multiplier = Signal(self._bits+3)
+        multiplicand = Signal(self._bits+2)
+
+        # Add a zero in the LSB of the multiplier and multiplicand
+        self.m.d.comb += [
+                multiplier.eq(Cat(Const(0), self.a, Const(0), Const(0))),
+                multiplicand.eq(Cat(Const(0), self.b)),
+        ]
+
+        last_b = self._bits
+        last_m = self._bits
+
+        # Step through the multiplier 2 bits at a time
+        for off_b in range(0, self._bits+1, 2):
+            # ...selecting a block of three bits at a tie
+            block = multiplier[off_b:off_b+3]
+
+            # Step through the multiplicand 1 bit at a time
+            for off_m in range(self._bits+1):
+                print("%d %d" % (off_b, off_m))
+                # ...selecting 2 bits at a time
+                mand = multiplicand[off_m:off_m+2]
+
+                o = Signal()
+                self._partial_products[off_b + off_m].append(o)
+
+                name = "booth_b%d_m%d" % (off_b, off_m)
+                self._generate_booth_encoder(block, mand, o, name)
+
+                if off_m == last_m:
+                    sign = Signal()
+                    notsign = Signal()
+                    self._generate_booth_sign(block, sign, notsign)
+                    print("last")
+                    if off_b == 0:
+                        print("first block")
+                        # Add (notsign, sign, sign) to top bits
+                        self._partial_products[off_b + off_m + 1].append(sign)
+                        self._partial_products[off_b + off_m + 2].append(sign)
+                        self._partial_products[off_b + off_m + 3].append(notsign)
+                    elif off_b != last_b:
+                        print("not first or last block")
+                        # Add (1, notsign) to top bits
+                        self._partial_products[off_b + off_m + 1].append(notsign)
+                        self._partial_products[off_b + off_m + 2].append(Const(1))
+
+                    if off_b != last_b:
+                        print("not last block")
+                        # Add sign to lowest bit in block
+                        self._partial_products[off_b].append(sign)
+
+            # First row, add ASS
+            # Other rows except final row, add 1A
+            # All but final row, add the sign bit to lowest bit
 
 
 class SchoolBook(Multiplier):
@@ -193,19 +262,22 @@ class Dadda(Multiplier):
 class SchoolBookDadda(SchoolBook, Dadda, Adder):
     pass
 
+class BoothRadix4Dadda(BoothRadix4, Dadda, Adder):
+    pass
+
 class SKY130SchoolBookDadda(SKY130, SchoolBook, Dadda, Adder):
     pass
 
 if __name__ == "__main__":
-    top = SKY130SchoolBookDadda(bits=16)
+    top = BoothRadix4Dadda(bits=2)
     with open("test.v", "w") as f:
         f.write(verilog.convert(top, ports = [top.a, top.b, top.o], strip_internal_attrs=True))
 
 
 class TestCase(unittest.TestCase):
     def setUp(self):
-        self.bits=16
-        self.dut = SchoolBookDadda(self.bits)
+        self.bits=2
+        self.dut = BoothRadix4Dadda(self.bits)
 
     def do_one_comb(self, a, b):
         yield self.dut.a.eq(a)
@@ -216,9 +288,11 @@ class TestCase(unittest.TestCase):
 
     def test_random(self):
         def bench():
-            for i in range(10000):
-                rand_a = random.getrandbits(self.bits)
-                rand_b = random.getrandbits(self.bits)
+            for i in range(1000):
+                #rand_a = random.getrandbits(self.bits)
+                #rand_b = random.getrandbits(self.bits)
+                rand_a = 2
+                rand_b = 2
                 yield from self.do_one_comb(rand_a, rand_b)
 
         sim = Simulator(self.dut)
