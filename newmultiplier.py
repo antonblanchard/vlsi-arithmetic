@@ -176,6 +176,9 @@ class Multiplier(Elaboratable):
     def _generate_and(self, a, b, o):
         self.m.d.comb += o.eq(a & b) 
 
+    def _generate_inv(self, a, o):
+        self.m.d.comb += o.eq(~a)
+
     def _generate_booth_encoder(self, block, sign, sel):
         # This is the standard booth encoder. We output a sign bit
         # and a 2 bit multiplicand selector:
@@ -259,7 +262,7 @@ class BoothRadix4(Multiplier):
 
                 if off_m == last_m:
                     notsign = Signal()
-                    self.m.d.comb += notsign.eq(~sign)
+                    self._generate_inv(sign, notsign)
 
                     if off_b == 0:
                         # Add (notsign, sign, sign) to top bits
@@ -273,14 +276,9 @@ class BoothRadix4(Multiplier):
                         self._partial_products[off_b + off_m + 1].append(notsign)
                         self._partial_products[off_b + off_m + 2].append(Const(1))
 
-                    # Why is sign for second block not 0?
                     if off_b != last_b:
                         # Add sign to lowest bit in block
                         self._partial_products[off_b].append(sign)
-
-            # First row, add ASS
-            # Other rows except final row, add 1A
-            # All but final row, add the sign bit to lowest bit
 
 
 class SchoolBook(Multiplier):
@@ -370,7 +368,7 @@ class SKY130BoothRadix4Dadda(SKY130, BoothRadix4, Dadda, Adder):
 if __name__ == "__main__":
     top = SKY130BoothRadix4Dadda(bits=16)
     with open("test.v", "w") as f:
-        f.write(verilog.convert(top, ports = [top.a, top.b, top.o], strip_internal_attrs=True))
+        f.write(verilog.convert(top, ports = [top.a, top.b, top.o], name="test", strip_internal_attrs=True))
 
 
 class TestCase(unittest.TestCase):
