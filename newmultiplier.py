@@ -296,6 +296,7 @@ class Adder(Multiplier):
 
 
 class Dadda(Multiplier):
+    # Dadda heights are d(0) = 2, d(n+1) = floor(1.5*d(n))
     def _calc_dadda_heights(self, bits):
         d=2
         out=list()
@@ -341,7 +342,9 @@ class Dadda(Multiplier):
 
                     # result goes in bottom of column and carry goes in the top of the next column
                     self._partial_products[offset].append(s)
-                    self._partial_products[offset+1].insert(0, c)
+                    # Put carry at bottom
+                    #self._partial_products[offset+1].insert(0, c)
+                    self._partial_products[offset+1].append(c)
 
                     subiteration = subiteration + 1
 
@@ -366,7 +369,7 @@ class SKY130BoothRadix4Dadda(SKY130, BoothRadix4, Dadda, Adder):
     pass
 
 if __name__ == "__main__":
-    top = SKY130BoothRadix4Dadda(bits=16)
+    top = SKY130BoothRadix4Dadda(bits=32)
     with open("test.v", "w") as f:
         f.write(verilog.convert(top, ports = [top.a, top.b, top.o], name="test", strip_internal_attrs=True))
 
