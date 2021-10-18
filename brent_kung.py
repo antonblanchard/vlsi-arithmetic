@@ -2,7 +2,7 @@ import unittest
 import random
 import math
 
-from nmigen import Elaboratable, Module, Signal, Cat
+from nmigen import Elaboratable, Module, Signal, Cat, Instance
 from nmigen.back import verilog
 from nmigen.sim import Simulator, Settle
 
@@ -22,6 +22,65 @@ class Simple(Elaboratable):
 
         return m
 
+
+class SKY130(Elaboratable):
+    def _generate_and(self, a, b, o):
+        andgate = Instance(
+            "sky130_fd_sc_hd__and2_1",
+            i_A=a,
+            i_B=b,
+            o_X=o,
+            #i_VPWR=
+            #i_VGND=
+            #i_VPB=
+            #i_VNB=
+        )
+
+        self.m.submodules += andgate
+
+    def _generate_xor(self, a, b, o):
+        xorgate = Instance(
+            "sky130_fd_sc_hd__xor2_1",
+            i_A=a,
+            i_B=b,
+            o_X=o,
+            #i_VPWR=
+            #i_VGND=
+            #i_VPB=
+            #i_VNB=
+        )
+
+        self.m.submodules += xorgate
+
+    def _generate_half_adder(self, a, b, sum_out, carry_out):
+        ha = Instance(
+            "sky130_fd_sc_hd__ha_1",
+            o_COUT=carry_out,
+            o_SUM=sum_out,
+            i_A=a,
+            i_B=b,
+            #i_VPWR=
+            #i_VGND=
+            #i_VPB=
+            #i_VNB=
+        )
+
+        self.m.submodules += ha
+
+    def _generate_and21_or2(self, a1, a2, b1, o):
+        a21o = Instance(
+            "sky130_fd_sc_a21o_1",
+            o_X=o,
+            i_A1=a1,
+            i_A2=a2,
+            i_B1=b1,
+            #i_VPWR=
+            #i_VGND=
+            #i_VPB=
+            #i_VNB=
+        )
+
+        self.m.submodules += a21o
 
 class BrentKung(Elaboratable):
     def __init__(self, bits=64, register_input=False, register_output=False):
@@ -64,16 +123,17 @@ class BrentKung(Elaboratable):
                 b.eq(self.b),
             ]
 
-        p_tmp = Signal(self._bits)
-        g_tmp = Signal(self._bits)
-
-        # Convert to per bit array
-        self._generate_half_adder(a, b, p_tmp, g_tmp)
-
-        # Use arrays of 1 bit signals to make it easy to create a
+        # Use arrays of 1 bit signals to make it easy to create
         # trees of p and g updates.
-        p = [p_tmp[i] for i in range(self._bits)]
-        g = [g_tmp[i] for i in range(self._bits)]
+        p = [Signal() for i in range(self._bits)]
+        p_tmp = [Signal() for i in range(self._bits)]
+        g = [Signal() for i in range(self._bits)]
+
+        for i in range(self._bits):
+            self._generate_half_adder(a[i], b[i], p[i], g[i])
+
+        for i in range(self._bits):
+            m.d.comb += p_tmp[i].eq(p[i])
 
         for i in range(1, int(math.log(self._bits, 2))+1):
             for j in range(2**i-1, self._bits, 2**i):
@@ -99,7 +159,10 @@ class BrentKung(Elaboratable):
         m.d.comb += g_flat.eq(Cat(g[n] for n in range(self._bits)))
 
         o = Signal(self._bits)
-        self._generate_xor(p_tmp, g_flat << 1, o)
+        g_shifted = Signal(self._bits)
+        m.d.comb += g_shifted.eq(g_flat << 1)
+        for i in range(self._bits):
+            self._generate_xor(p_tmp[i], g_shifted[i], o[i])
 
         if self._register_output:
             m.d.sync += self.o.eq(o)
@@ -108,8 +171,11 @@ class BrentKung(Elaboratable):
 
         return m
 
+class SKY130BrentKung(SKY130, BrentKung):
+    pass
+
 if __name__ == "__main__":
-    top = BrentKung(bits=64, register_input=True, register_output=True)
+    top = SKY130BrentKung(bits=64, register_input=True, register_output=True)
     with open("brent_kung.v", "w") as f:
         f.write(verilog.convert(top, ports = [top.a, top.b, top.o], strip_internal_attrs=True))
 
