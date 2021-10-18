@@ -25,7 +25,7 @@ class SKY130(Elaboratable):
         self.m.submodules[name] = fa
 
     def _generate_half_adder(self, a, b, sum_out, carry_out, name):
-        fa = Instance(
+        ha = Instance(
             "sky130_fd_sc_hd__ha_1",
             o_COUT=carry_out,
             o_SUM=sum_out,
@@ -37,7 +37,7 @@ class SKY130(Elaboratable):
             #i_VNB=
         )
 
-        self.m.submodules[name] = fa
+        self.m.submodules[name] = ha
 
     def _generate_and(self, a, b, o):
         andgate = Instance(
