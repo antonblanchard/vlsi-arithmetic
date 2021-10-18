@@ -33,8 +33,23 @@ class BrentKung(Elaboratable):
         self._register_input = register_input
         self._register_output = register_output
 
+    def _generate_and(self, a, b, o):
+        self.m.d.comb += o.eq(a & b)
+
+    def _generate_xor(self, a, b, o):
+        self.m.d.comb += o.eq(a ^ b)
+
+    def _generate_half_adder(self, a, b, s, co):
+        self.m.d.comb += [
+            s.eq(a ^ b),
+            co.eq(a & b),
+        ]
+
+    def _generate_and21_or2(self, a, b, c, o):
+        self.m.d.comb += o.eq((a & b) | c)
+
     def elaborate(self, platform):
-        m = Module()
+        self.m = m = Module()
 
         a = Signal(self._bits)
         b = Signal(self._bits)
@@ -51,11 +66,9 @@ class BrentKung(Elaboratable):
 
         p_tmp = Signal(self._bits)
         g_tmp = Signal(self._bits)
-        # Replace with half adder
-        m.d.comb += [
-            p_tmp.eq(a ^ b),
-            g_tmp.eq(a & b),
-        ]
+
+        # Convert to per bit array
+        self._generate_half_adder(a, b, p_tmp, g_tmp)
 
         # Use arrays of 1 bit signals to make it easy to create a
         # trees of p and g updates.
@@ -67,8 +80,8 @@ class BrentKung(Elaboratable):
                 pair = j - 2**(i-1)
                 p_new = Signal()
                 g_new = Signal()
-                m.d.comb += p_new.eq(p[j] & p[pair]);
-                m.d.comb += g_new.eq(g[j] | (p[j] & g[pair]));
+                self._generate_and(p[j], p[pair], p_new)
+                self._generate_and21_or2(p[j], g[pair], g[j], g_new)
                 p[j] = p_new
                 g[j] = g_new
 
@@ -77,8 +90,8 @@ class BrentKung(Elaboratable):
                 pair = j - 2**(i-1)
                 p_new = Signal()
                 g_new = Signal()
-                m.d.comb += p_new.eq(p[j] & p[pair]);
-                m.d.comb += g_new.eq(g[j] | (p[j] & g[pair]));
+                self._generate_and(p[j], p[pair], p_new)
+                self._generate_and21_or2(p[j], g[pair], g[j], g_new)
                 p[j] = p_new
                 g[j] = g_new
 
@@ -86,7 +99,7 @@ class BrentKung(Elaboratable):
         m.d.comb += g_flat.eq(Cat(g[n] for n in range(self._bits)))
 
         o = Signal(self._bits)
-        m.d.comb += o.eq(p_tmp ^ (g_flat << 1))
+        self._generate_xor(p_tmp, g_flat << 1, o)
 
         if self._register_output:
             m.d.sync += self.o.eq(o)
