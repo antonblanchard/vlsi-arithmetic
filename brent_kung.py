@@ -2,7 +2,7 @@ import unittest
 import random
 import math
 
-from nmigen import Elaboratable, Module, Signal, Cat, Instance
+from nmigen import Elaboratable, Module, Signal, Cat, Instance, Const
 from nmigen.back import verilog
 from nmigen.sim import Simulator, Settle
 
@@ -82,6 +82,7 @@ class SKY130(Elaboratable):
 
         self.m.submodules += a21o
 
+
 class BrentKung(Elaboratable):
     def __init__(self, bits=64, register_input=False, register_output=False):
         self.a = Signal(bits)
@@ -126,15 +127,17 @@ class BrentKung(Elaboratable):
         # Use arrays of 1 bit signals to make it easy to create
         # trees of p and g updates.
         p = [Signal() for i in range(self._bits)]
-        p_tmp = [Signal() for i in range(self._bits)]
         g = [Signal() for i in range(self._bits)]
 
         for i in range(self._bits):
             self._generate_half_adder(a[i], b[i], p[i], g[i])
 
+        # We need a copy of p
+        p_tmp = [Signal() for i in range(self._bits)]
         for i in range(self._bits):
             m.d.comb += p_tmp[i].eq(p[i])
 
+        # Calculate the p and g for the odd bits
         for i in range(1, int(math.log(self._bits, 2))+1):
             for j in range(2**i-1, self._bits, 2**i):
                 pair = j - 2**(i-1)
@@ -145,6 +148,7 @@ class BrentKung(Elaboratable):
                 p[j] = p_new
                 g[j] = g_new
 
+        # Calculate p and go for the even bits
         for i in range(int(math.log(self._bits, 2)), 0, -1):
             for j in range(2**i + 2**(i-1) - 1, self._bits, 2**i):
                 pair = j - 2**(i-1)
@@ -155,14 +159,15 @@ class BrentKung(Elaboratable):
                 p[j] = p_new
                 g[j] = g_new
 
-        g_flat = Signal(self._bits)
-        m.d.comb += g_flat.eq(Cat(g[n] for n in range(self._bits)))
+        # g is the carry out signal. We need to shift it left one bit then
+        # xor it with the sum (ie p_tmp). Since we have a list of 1 bits, just
+        # insert zero at the head of of the list
+        g.insert(0, Const(0))
 
         o = Signal(self._bits)
-        g_shifted = Signal(self._bits)
-        m.d.comb += g_shifted.eq(g_flat << 1)
         for i in range(self._bits):
-            self._generate_xor(p_tmp[i], g_shifted[i], o[i])
+            # This also flattens the list of bits when writing to o
+            self._generate_xor(p_tmp[i], g[i], o[i])
 
         if self._register_output:
             m.d.sync += self.o.eq(o)
