@@ -24,21 +24,36 @@ class Simple(Elaboratable):
 
 
 class BrentKung(Elaboratable):
-    def __init__(self, bits=64):
+    def __init__(self, bits=64, register_input=False, register_output=False):
         self.a = Signal(bits)
         self.b = Signal(bits)
         self.o = Signal(bits)
 
         self._bits = bits
+        self._register_input = register_input
+        self._register_output = register_output
 
     def elaborate(self, platform):
         m = Module()
 
+        a = Signal(self._bits)
+        b = Signal(self._bits)
+        if self._register_input:
+            m.d.sync += [
+                a.eq(self.a),
+                b.eq(self.b),
+            ]
+        else:
+            m.d.comb += [
+                a.eq(self.a),
+                b.eq(self.b),
+            ]
+
         p_tmp = Signal(self._bits)
         g_tmp = Signal(self._bits)
         m.d.comb += [
-            p_tmp.eq(self.a ^ self.b),
-            g_tmp.eq(self.a & self.b),
+            p_tmp.eq(a ^ b),
+            g_tmp.eq(a & b),
         ]
 
         # Use arrays of 1 bit signals to make it easy to create a
@@ -69,12 +84,18 @@ class BrentKung(Elaboratable):
         g_flat = Signal(self._bits)
         m.d.comb += g_flat.eq(Cat(g[n] for n in range(self._bits)))
 
-        m.d.comb += self.o.eq(p_tmp ^ (g_flat << 1))
+        o = Signal(self._bits)
+        m.d.comb += o.eq(p_tmp ^ (g_flat << 1))
+
+        if self._register_output:
+            m.d.sync += self.o.eq(o)
+        else:
+            m.d.comb += self.o.eq(o)
 
         return m
 
 if __name__ == "__main__":
-    top = BrentKung(bits=2)
+    top = BrentKung(bits=64, register_input=True, register_output=True)
     with open("brent_kung.v", "w") as f:
         f.write(verilog.convert(top, ports = [top.a, top.b, top.o], strip_internal_attrs=True))
 
