@@ -51,6 +51,7 @@ class BrentKung(Elaboratable):
 
         p_tmp = Signal(self._bits)
         g_tmp = Signal(self._bits)
+        # Replace with half adder
         m.d.comb += [
             p_tmp.eq(a ^ b),
             g_tmp.eq(a & b),
@@ -67,7 +68,7 @@ class BrentKung(Elaboratable):
                 p_new = Signal()
                 g_new = Signal()
                 m.d.comb += p_new.eq(p[j] & p[pair]);
-                m.d.comb += g_new.eq(g[j] | p[j] & g[pair]);
+                m.d.comb += g_new.eq(g[j] | (p[j] & g[pair]));
                 p[j] = p_new
                 g[j] = g_new
 
@@ -77,7 +78,7 @@ class BrentKung(Elaboratable):
                 p_new = Signal()
                 g_new = Signal()
                 m.d.comb += p_new.eq(p[j] & p[pair]);
-                m.d.comb += g_new.eq(g[j] | p[j] & g[pair]);
+                m.d.comb += g_new.eq(g[j] | (p[j] & g[pair]));
                 p[j] = p_new
                 g[j] = g_new
 
