@@ -69,7 +69,7 @@ class SKY130(Elaboratable):
 
     def _generate_and21_or2(self, a1, a2, b1, o):
         a21o = Instance(
-            "sky130_fd_sc_a21o_1",
+            "sky130_fd_sc_hd__a21o_1",
             o_X=o,
             i_A1=a1,
             i_A2=a2,
@@ -111,8 +111,8 @@ class BrentKung(Elaboratable):
     def elaborate(self, platform):
         self.m = m = Module()
 
-        a = Signal(self._bits)
-        b = Signal(self._bits)
+        a = Signal(self._bits, reset_less=True)
+        b = Signal(self._bits, reset_less=True)
         if self._register_input:
             m.d.sync += [
                 a.eq(self.a),
@@ -169,11 +169,13 @@ class BrentKung(Elaboratable):
             # This also flattens the list of bits when writing to o
             self._generate_xor(p_tmp[i], g[i], o[i])
 
+        o2 = Signal(self._bits, reset_less=True)
         if self._register_output:
-            m.d.sync += self.o.eq(o)
+            m.d.sync += o2.eq(o)
         else:
-            m.d.comb += self.o.eq(o)
+            m.d.comb += o2.eq(o)
 
+        m.d.comb += self.o.eq(o2)
         return m
 
 class SKY130BrentKung(SKY130, BrentKung):
@@ -181,6 +183,7 @@ class SKY130BrentKung(SKY130, BrentKung):
 
 if __name__ == "__main__":
     top = SKY130BrentKung(bits=64, register_input=True, register_output=True)
+    #top = SKY130BrentKung(bits=64)
     with open("brent_kung.v", "w") as f:
         f.write(verilog.convert(top, ports = [top.a, top.b, top.o], strip_internal_attrs=True))
 
