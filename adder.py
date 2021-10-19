@@ -134,7 +134,7 @@ if __name__ == "__main__":
         if args.process == 'sky130':
             myadder = SKY130BrentKung
         else:
-            print("Uknown process")
+            print("Unknown process")
             exit(1)
 
     adder = myadder(bits=args.bits, register_input=args.register_input, register_output=args.register_output)
