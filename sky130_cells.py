@@ -42,7 +42,7 @@ class SKY130(Elaboratable):
 
         self.m.submodules += invgate
 
-    def _generate_full_adder(self, a, b, carry_in, sum_out, carry_out, name):
+    def _generate_full_adder(self, a, b, carry_in, sum_out, carry_out, name=None):
         fa = Instance(
             "sky130_fd_sc_hd__fa_1",
             o_COUT=carry_out,
@@ -55,10 +55,12 @@ class SKY130(Elaboratable):
             #i_VPB=
             #i_VNB=
         )
+        if name:
+            self.m.submodules[name] = fa
+        else:
+            self.m.submodules += fa
 
-        self.m.submodules[name] = fa
-
-    def _generate_half_adder(self, a, b, sum_out, carry_out):
+    def _generate_half_adder(self, a, b, sum_out, carry_out, name=None):
         ha = Instance(
             "sky130_fd_sc_hd__ha_1",
             o_COUT=carry_out,
@@ -71,7 +73,10 @@ class SKY130(Elaboratable):
             #i_VNB=
         )
 
-        self.m.submodules += ha
+        if name:
+            self.m.submodules[name] = ha
+        else:
+            self.m.submodules += ha
 
     # Used in adder
     def _generate_and21_or2(self, a1, a2, b1, o):
