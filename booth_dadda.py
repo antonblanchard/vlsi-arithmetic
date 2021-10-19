@@ -82,6 +82,16 @@ class BoothRadix4(Elaboratable):
 
         return m
 
+class SchoolBook(Elaboratable):
+    def __init__(self, bits=64):
+        self.bits = bits
+
+    def generate_partial_products(self):
+        self.partial_products = [[] for i in range(len(multiplier)+len(multiplicand))]
+        self.partial_products
+
+class Dadda(Elaboratable):
+    def reduce_partial_products(self):
 
 class BoothDadda(Elaboratable):
     def __init__(self, bits=64):
