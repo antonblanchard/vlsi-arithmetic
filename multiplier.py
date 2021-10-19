@@ -55,7 +55,7 @@ class Multiplier(Elaboratable):
 
     def _generate_and32_or2(self, a1, a2, a3, b1, b2, o):
         # 3-input AND into first input, and 2-input AND into 2nd input of 2-input OR
-        self.m.d.comb += o.eq((a1 & a2 & a2) | (b1 & b2))
+        self.m.d.comb += o.eq((a1 & a2 & a3) | (b1 & b2))
 
     def _generate_booth_encoder(self, block, sign, sel):
         # This is the standard booth encoder. We output a sign bit
