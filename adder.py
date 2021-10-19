@@ -139,4 +139,4 @@ if __name__ == "__main__":
 
     adder = myadder(bits=args.bits, register_input=args.register_input, register_output=args.register_output)
 
-    args.output.write(verilog.convert(adder, ports = [adder.a, adder.b, adder.o], strip_internal_attrs=True))
+    args.output.write(verilog.convert(adder, ports = [adder.a, adder.b, adder.o], name='adder', strip_internal_attrs=True))
