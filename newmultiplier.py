@@ -148,12 +148,18 @@ class SKY130(Elaboratable):
 
 
 class Multiplier(Elaboratable):
-    def __init__(self, bits=64):
+    def __init__(self, bits=64, multiply_add=False, register_input=False, register_middle=False, register_output=False):
         self.a = Signal(bits)
         self.b = Signal(bits)
+        if multiply_add:
+            self.c = Signal(bits*2)
         self.o = Signal(bits*2)
 
         self._bits = bits
+        self._multiply_add = multiply_add
+        self._register_input = register_input
+        self._register_middle = register_middle
+        self._register_output = register_output
         self._partial_products = [[] for i in range(bits*2)]
         self._final_a = Signal(bits*2)
         self._final_b = Signal(bits*2)
@@ -216,6 +222,11 @@ class Multiplier(Elaboratable):
         self.m = Module()
 
         self._gen_partial_products()
+
+        if self._multiply_add:
+            for i in range(self._bits):
+                self._partial_products[i].append(self.c[i])
+
         self._acc_partial_products()
         self._final_adder()
 
@@ -369,9 +380,9 @@ class SKY130BoothRadix4Dadda(SKY130, BoothRadix4, Dadda, Adder):
     pass
 
 if __name__ == "__main__":
-    top = SKY130BoothRadix4Dadda(bits=32)
-    with open("test.v", "w") as f:
-        f.write(verilog.convert(top, ports = [top.a, top.b, top.o], name="test", strip_internal_attrs=True))
+    top = SKY130BoothRadix4Dadda(bits=64, multiply_add=True)
+    with open("boothradix4_dadda_sky130.v", "w") as f:
+        f.write(verilog.convert(top, ports = [top.a, top.b, top.c, top.o], name="test", strip_internal_attrs=True))
 
 
 class TestCase(unittest.TestCase):
