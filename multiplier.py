@@ -3,145 +3,7 @@ import math
 from nmigen import Elaboratable, Module, Signal, Cat, Const, Instance
 from nmigen.back import verilog
 
-
-class SKY130(Elaboratable):
-    def _generate_full_adder(self, a, b, carry_in, sum_out, carry_out, name):
-        fa = Instance(
-            "sky130_fd_sc_hd__fa_1",
-            o_COUT=carry_out,
-            o_SUM=sum_out,
-            i_A=a,
-            i_B=b,
-            i_CIN=carry_in,
-            #i_VPWR=
-            #i_VGND=
-            #i_VPB=
-            #i_VNB=
-        )
-
-        self.m.submodules[name] = fa
-
-    def _generate_half_adder(self, a, b, sum_out, carry_out, name):
-        ha = Instance(
-            "sky130_fd_sc_hd__ha_1",
-            o_COUT=carry_out,
-            o_SUM=sum_out,
-            i_A=a,
-            i_B=b,
-            #i_VPWR=
-            #i_VGND=
-            #i_VPB=
-            #i_VNB=
-        )
-
-        self.m.submodules[name] = ha
-
-    def _generate_and(self, a, b, o):
-        andgate = Instance(
-            "sky130_fd_sc_hd__and2_1",
-            i_A=a,
-            i_B=b,
-            o_X=o,
-            #i_VPWR=
-            #i_VGND=
-            #i_VPB=
-            #i_VNB=
-        )
-
-        self.m.submodules += andgate
-
-    def _generate_xor(self, a, b, o):
-        xorgate = Instance(
-            "sky130_fd_sc_hd__xor2_1",
-            i_A=a,
-            i_B=b,
-            o_X=o,
-            #i_VPWR=
-            #i_VGND=
-            #i_VPB=
-            #i_VNB=
-        )
-
-        self.m.submodules += xorgate
-
-    def _generate_inv(self, a, o):
-        invgate = Instance(
-            "sky130_fd_sc_hd__inv_1",
-            i_A=a,
-            o_Y=o,
-            #i_VPWR=
-            #i_VGND=
-            #i_VPB=
-            #i_VNB=
-        )
-
-        self.m.submodules += invgate
-
-    def _generate_and2_or2(self, a1, a2, b1, b2, o):
-        # 2-input AND into both inputs of 2-input OR
-        a22ogate = Instance(
-            "sky130_fd_sc_hd__a22o_1",
-            i_A1=a1,
-            i_A2=a2,
-            i_B1=b1,
-            i_B2=b2,
-            o_X=o,
-            #i_VPWR=
-            #i_VGND=
-            #i_VPB=
-            #i_VNB=
-        )
-
-        self.m.submodules += a22ogate
-
-    def _generate_and32_or2(self, a1, a2, a3, b1, b2, o):
-        # 3-input AND into first input, and 2-input AND into 2nd input of 2-input OR
-        a32ogate = Instance(
-            "sky130_fd_sc_hd__a32o_1",
-            i_A1=a1,
-            i_A2=a2,
-            i_A3=a3,
-            i_B1=b1,
-            i_B2=b2,
-            o_X=o,
-            #i_VPWR=
-            #i_VGND=
-            #i_VPB=
-            #i_VNB=
-        )
-
-        self.m.submodules += a32ogate
-
-    def _generate_booth_encoder(self, block, sign, sel):
-        # sign is just the top bit
-        self.m.d.comb += sign.eq(block[2])
-
-        notblock = Signal(3)
-        for i in range(3):
-            self._generate_inv(block[i], notblock[i])
-
-        sel_0 = Signal()
-        sel_1 = Signal()
-
-        # sel[0]:
-        # 011 | 100
-        # (~block[2] & block[1] & block[0]) | (block[2] & ~block[1] & ~block[0])
-        t = Signal()
-        self._generate_and(block[2], notblock[1], t)
-        self._generate_and32_or2(notblock[2], block[1], block[0], t, notblock[0], sel_0)
-
-        # sel[1]:
-        # ?01 | ?10
-        # (~block[1] & block[0]) | (block[1] & ~block[0])
-        self._generate_and2_or2(notblock[1], block[0], block[1], notblock[0], sel_1)
-
-        self.m.d.comb += sel.eq(Cat(sel_0, sel_1))
-
-    def _generate_booth_mux(self, multiplicand, sel, sign, o):
-        # ((multiplicand[0] & sel[0]) | (multiplicand[1] & sel[1])) ^ sign
-        t = Signal()
-        self._generate_and2_or2(multiplicand[0], sel[0], multiplicand[1], sel[1], t)
-        self._generate_xor(t, sign, o)
+from sky130_cells import SKY130
 
 
 class Multiplier(Elaboratable):
@@ -199,21 +61,32 @@ class Multiplier(Elaboratable):
         # sign is just the top bit
         self.m.d.comb += sign.eq(block[2])
 
+        notblock = Signal(3)
+        for i in range(3):
+            self._generate_inv(block[i], notblock[i])
+
         sel_0 = Signal()
         sel_1 = Signal()
 
         # sel[0]:
         # 011 | 100
-        self.m.d.comb += sel_0.eq((~block[2] & block[1] & block[0]) | (block[2] & ~block[1] & ~block[0]))
+        # (~block[2] & block[1] & block[0]) | (block[2] & ~block[1] & ~block[0])
+        t = Signal()
+        self._generate_and(block[2], notblock[1], t)
+        self._generate_and32_or2(notblock[2], block[1], block[0], t, notblock[0], sel_0)
 
         # sel[1]:
         # ?01 | ?10
-        self.m.d.comb += sel_1.eq((~block[1] & block[0]) | (block[1] & ~block[0]))
+        # (~block[1] & block[0]) | (block[1] & ~block[0])
+        self._generate_and2_or2(notblock[1], block[0], block[1], notblock[0], sel_1)
 
         self.m.d.comb += sel.eq(Cat(sel_0, sel_1))
 
     def _generate_booth_mux(self, multiplicand, sel, sign, o):
-        self.m.d.comb += o.eq(((multiplicand[0] & sel[0]) | (multiplicand[1] & sel[1])) ^ sign)
+        # ((multiplicand[0] & sel[0]) | (multiplicand[1] & sel[1])) ^ sign
+        t = Signal()
+        self._generate_and2_or2(multiplicand[0], sel[0], multiplicand[1], sel[1], t)
+        self._generate_xor(t, sign, o)
 
     def elaborate(self, platform):
         self.m = Module()
