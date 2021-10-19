@@ -1,4 +1,6 @@
+import sys
 import math
+import argparse
 
 from nmigen import Elaboratable, Module, Signal, Cat, Const, Instance
 from nmigen.back import verilog
@@ -33,16 +35,27 @@ class Multiplier(Elaboratable):
         pass
 
     def _generate_full_adder(self, a, b, carry_in, sum_out, carry_out, name):
-        self.m.d.comb += Cat(sum_out, carry_out).eq(a + b + carry_in) 
+        self.m.d.comb += Cat(sum_out, carry_out).eq(a + b + carry_in)
 
     def _generate_half_adder(self, a, b, sum_out, carry_out, name):
-        self.m.d.comb += Cat(sum_out, carry_out).eq(a + b) 
+        self.m.d.comb += Cat(sum_out, carry_out).eq(a + b)
 
     def _generate_and(self, a, b, o):
-        self.m.d.comb += o.eq(a & b) 
+        self.m.d.comb += o.eq(a & b)
+
+    def _generate_xor(self, a, b, o):
+        self.m.d.comb += o.eq(a ^ b)
 
     def _generate_inv(self, a, o):
         self.m.d.comb += o.eq(~a)
+
+    def _generate_and2_or2(self, a1, a2, b1, b2, o):
+        # 2-input AND into both inputs of 2-input OR
+        self.m.d.comb += o.eq((a1 & a2) | (b1 & b2))
+
+    def _generate_and32_or2(self, a1, a2, a3, b1, b2, o):
+        # 3-input AND into first input, and 2-input AND into 2nd input of 2-input OR
+        self.m.d.comb += o.eq((a1 & a2 & a2) | (b1 & b2))
 
     def _generate_booth_encoder(self, block, sign, sel):
         # This is the standard booth encoder. We output a sign bit
@@ -171,6 +184,7 @@ class SchoolBook(Multiplier):
                 self._generate_and(self.a[off_a], self.b[off_b], o)
 
 
+# Use optimised adder
 class Adder(Multiplier):
     def _final_adder(self):
         self.m.d.comb += self.o.eq(self._final_a + self._final_b)
@@ -240,16 +254,52 @@ class Dadda(Multiplier):
         self._final_b = Cat(self._partial_products[n][1] for n in range(len(self._partial_products)))
 
 
-class SchoolBookDadda(SchoolBook, Dadda, Adder):
-    pass
-
 class BoothRadix4Dadda(BoothRadix4, Dadda, Adder):
     pass
+
 
 class SKY130BoothRadix4Dadda(SKY130, BoothRadix4, Dadda, Adder):
     pass
 
+
 if __name__ == "__main__":
-    top = SKY130BoothRadix4Dadda(bits=64, multiply_add=True)
-    with open("boothradix4_dadda_sky130.v", "w") as f:
-        f.write(verilog.convert(top, ports = [top.a, top.b, top.c, top.o], name="test", strip_internal_attrs=True))
+    parser = argparse.ArgumentParser(description='Create Verilog Multiplier')
+
+    parser.add_argument('--bits', type=int,
+            help='Width in bits of adder', default=32)
+
+    parser.add_argument('--multiply_add', action='store_true',
+            help='Multiply add (a*b+c)')
+
+    parser.add_argument('--register-input', action='store_true',
+            help='Add a register stage to the input')
+
+    parser.add_argument('--register-middle', action='store_true',
+            help='Add a register stage in between partial product generation and partial product accumulation')
+
+    parser.add_argument('--register-output', action='store_true',
+            help='Add a register stage to the output')
+
+    parser.add_argument('--process',
+            help='What process to build for, eg sky130')
+
+    parser.add_argument('--output', type=argparse.FileType('w'), default=sys.stdout,
+            help='Write output to this file')
+
+    args = parser.parse_args()
+
+    mymultiplier = BoothRadix4Dadda
+    if args.process:
+        if args.process == 'sky130':
+            mymultiplier = SKY130BoothRadix4Dadda
+        else:
+            print("Unknown process")
+            exit(1)
+
+    multiplier = mymultiplier(bits=args.bits, multiply_add=args.multiply_add, register_input=args.register_input, register_middle=args.register_input, register_output=args.register_output)
+
+    ports = [multiplier.a, multiplier.b, multiplier.o]
+    if args.multiply_add:
+        ports.append(multiplier.c)
+
+    args.output.write(verilog.convert(multiplier, ports=ports, name='multiplier', strip_internal_attrs=True))
