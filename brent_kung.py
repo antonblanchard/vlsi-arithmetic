@@ -7,22 +7,6 @@ from nmigen.back import verilog
 from nmigen.sim import Simulator, Settle
 
 
-class Simple(Elaboratable):
-    def __init__(self, bits=64):
-        self.a = Signal(bits)
-        self.b = Signal(bits)
-        self.o = Signal(bits)
-
-        self._bits = bits
-
-    def elaborate(self, platform):
-        m = Module()
-
-        m.d.comb += self.o.eq(self.a+self.b)
-
-        return m
-
-
 class SKY130(Elaboratable):
     def _generate_and(self, a, b, o):
         andgate = Instance(
