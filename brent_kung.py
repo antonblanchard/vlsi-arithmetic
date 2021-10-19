@@ -182,10 +182,16 @@ class SKY130BrentKung(SKY130, BrentKung):
     pass
 
 if __name__ == "__main__":
-    top = SKY130BrentKung(bits=64, register_input=True, register_output=True)
+    top = SKY130BrentKung(bits=64, register_input=False, register_output=False)
+    with open("brent_kung_sky130.v", "w") as f:
+        f.write(verilog.convert(top, ports = [top.a, top.b, top.o], strip_internal_attrs=True))
+
+if __name__ == "__main__":
+    top = BrentKung(bits=64, register_input=True, register_output=True)
     #top = SKY130BrentKung(bits=64)
     with open("brent_kung.v", "w") as f:
         f.write(verilog.convert(top, ports = [top.a, top.b, top.o], strip_internal_attrs=True))
+
 
 class TestCase(unittest.TestCase):
     def setUp(self):
