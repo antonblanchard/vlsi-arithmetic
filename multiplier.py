@@ -202,8 +202,8 @@ class LongMultiplication(Elaboratable):
 class Dadda(Elaboratable):
     # Dadda heights are d(0) = 2, d(n+1) = floor(1.5*d(n))
     def _calc_dadda_heights(self, bits):
-        d=2
-        out=list()
+        d = 2
+        out = list()
 
         while d < bits:
             out.append(d)
@@ -302,25 +302,25 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Create Verilog Multiplier')
 
     parser.add_argument('--bits', type=int,
-            help='Width in bits of adder', default=32)
+                        help='Width in bits of adder', default=32)
 
     parser.add_argument('--multiply-add', action='store_true',
-            help='Multiply add (a*b+c)')
+                        help='Multiply add (a*b+c)')
 
     parser.add_argument('--register-input', action='store_true',
-            help='Add a register stage to the input')
+                        help='Add a register stage to the input')
 
     parser.add_argument('--register-middle', action='store_true',
-            help='Add a register stage in between partial product generation and partial product accumulation')
+                        help='Add a register stage in between partial product generation and partial product accumulation')
 
     parser.add_argument('--register-output', action='store_true',
-            help='Add a register stage to the output')
+                        help='Add a register stage to the output')
 
     parser.add_argument('--process',
-            help='What process to build for, eg sky130')
+                        help='What process to build for, eg sky130')
 
     parser.add_argument('--output', type=argparse.FileType('w'), default=sys.stdout,
-            help='Write output to this file')
+                        help='Write output to this file')
 
     args = parser.parse_args()
 
@@ -333,13 +333,14 @@ if __name__ == "__main__":
             exit(1)
 
     multiplier = mymultiplier(bits=args.bits, multiply_add=args.multiply_add,
-                    register_input=args.register_input, register_middle=args.register_middle,
-                    register_output=args.register_output)
+                              register_input=args.register_input,
+                              register_middle=args.register_middle,
+                              register_output=args.register_output)
 
     ports = [multiplier.a, multiplier.b, multiplier.o]
-    name='multiplier'
+    name = 'multiplier'
     if args.multiply_add:
         ports.append(multiplier.c)
-        name='multiply_adder'
+        name = 'multiply_adder'
 
     args.output.write(verilog.convert(multiplier, ports=ports, name=name, strip_internal_attrs=True))
