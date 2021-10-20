@@ -114,7 +114,7 @@ class TestCasePipelined(unittest.TestCase):
             yield self.dut.b.eq(0)
 
         res = (yield self.dut.o)
-        self.assertEqual(res, rand_a * rand_b)
+        self.assertEqual(res, a * b)
 
     def test(self):
         def bench():
