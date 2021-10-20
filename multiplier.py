@@ -40,7 +40,7 @@ class Multiplier(Elaboratable):
         self.a_registered = Signal(bits, reset_less=True)
         self.b_registered = Signal(bits, reset_less=True)
         if multiply_add:
-            self.c_registered = Signal(bits, reset_less=True)
+            self.c_registered = Signal(bits*2, reset_less=True)
         self._final_a_registered = Signal(bits*2, reset_less=True)
         self._final_b_registered = Signal(bits*2, reset_less=True)
 
@@ -267,8 +267,7 @@ class InferredAdder(Elaboratable):
 
 class BrentKungNoneAdder(Elaboratable):
     def _final_adder(self):
-        adder = BrentKungNone(bits=self._bits*2)
-        self.m.submodules += adder
+        self.m.submodules.final_adder = adder = BrentKungNone(bits=self._bits*2)
 
         self.m.d.comb += [
             adder.a.eq(self._final_a_registered),
@@ -279,8 +278,7 @@ class BrentKungNoneAdder(Elaboratable):
 
 class BrentKungSKY130Adder(Elaboratable):
     def _final_adder(self):
-        adder = BrentKungSKY130(bits=self._bits*2)
-        self.m.submodules += adder
+        self.m.submodules.final_adder = adder = BrentKungSKY130(bits=self._bits*2)
 
         self.m.d.comb += [
             adder.a.eq(self._final_a_registered),
