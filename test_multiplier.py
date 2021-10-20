@@ -41,8 +41,8 @@ class TestCaseSpecific(unittest.TestCase):
     def test_cases(self):
         def bench():
             for (a, b) in [(x, y) for x in self.cases for y in self.cases]:
-                rand_a = random.getrandbits(64)
-                rand_b = random.getrandbits(64)
+                rand_a = random.getrandbits(self.bits)
+                rand_b = random.getrandbits(self.bits)
                 yield from self.do_one_comb(rand_a, rand_b)
 
         sim = Simulator(self.dut)
@@ -102,11 +102,15 @@ class TestCaseRandom(unittest.TestCase):
 
 class TestCasePipelined(unittest.TestCase):
     def setUp(self):
-        self.dut = BoothRadix4Dadda(bits=64, register_input=True, register_middle=True, register_output=True)
+        self.bits = 64
+        self.dut = BoothRadix4Dadda(bits=self.bits, register_input=True, register_middle=True, register_output=True)
 
     def do_one_sync(self, a, b, cycles=3):
         yield self.dut.a.eq(a)
         yield self.dut.b.eq(b)
+
+        # Why do we need this extra yield? I don't understand something about the nmigen simulator
+        yield
 
         for i in range(cycles):
             yield
@@ -119,8 +123,8 @@ class TestCasePipelined(unittest.TestCase):
     def test(self):
         def bench():
             for i in range(1000):
-                rand_a = random.getrandbits(64)
-                rand_b = random.getrandbits(64)
+                rand_a = random.getrandbits(self.bits)
+                rand_b = random.getrandbits(self.bits)
                 yield from self.do_one_sync(rand_a, rand_b)
 
         sim = Simulator(self.dut)
