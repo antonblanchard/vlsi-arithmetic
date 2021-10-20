@@ -83,7 +83,7 @@ class Multiplier(Elaboratable):
         return self.m
 
 
-class BoothRadix4(Multiplier):
+class BoothRadix4(Elaboratable):
     def _generate_booth_encoder(self, block, sign, sel):
         # This is the standard booth encoder. We output a sign bit
         # and a 2 bit multiplicand selector:
@@ -187,7 +187,7 @@ class BoothRadix4(Multiplier):
                         self._partial_products[off_b].append(sign)
 
 
-class SchoolBook(Multiplier):
+class LongMultiplication(Elaboratable):
     def _gen_partial_products(self):
         for off_a in range(self._bits):
             for off_b in range(self._bits):
@@ -196,7 +196,7 @@ class SchoolBook(Multiplier):
                 self._generate_and(self.a[off_a], self.b[off_b], o)
 
 
-class Dadda(Multiplier):
+class Dadda(Elaboratable):
     # Dadda heights are d(0) = 2, d(n+1) = floor(1.5*d(n))
     def _calc_dadda_heights(self, bits):
         d=2
@@ -267,33 +267,33 @@ class InferredAdder(Elaboratable):
 
 class BrentKungNoneAdder(Elaboratable):
     def _final_adder(self):
-        adder = BrentKungNone(bits=self._bits)
+        adder = BrentKungNone(bits=self._bits*2)
         self.m.submodules += adder
 
         self.m.d.comb += [
-                adder.a.eq(self._final_a_registered),
-                adder.b.eq(self._final_b_registered),
-                self.result.eq(adder.o),
+            adder.a.eq(self._final_a_registered),
+            adder.b.eq(self._final_b_registered),
+            self.result.eq(adder.o),
         ]
 
 
 class BrentKungSKY130Adder(Elaboratable):
     def _final_adder(self):
-        adder = BrentKungSKY130(bits=self._bits)
+        adder = BrentKungSKY130(bits=self._bits*2)
         self.m.submodules += adder
 
         self.m.d.comb += [
-                adder.a.eq(self._final_a_registered),
-                adder.b.eq(self._final_b_registered),
-                self.result.eq(adder.o),
+            adder.a.eq(self._final_a_registered),
+            adder.b.eq(self._final_b_registered),
+            self.result.eq(adder.o),
         ]
 
 
-class BoothRadix4DaddaBrentKung(BoothRadix4, Dadda, ProcessNone, BrentKungNoneAdder):
+class BoothRadix4DaddaBrentKungNone(Multiplier, BoothRadix4, Dadda, ProcessNone, BrentKungNoneAdder):
     pass
 
 
-class SKY130BoothRadix4DaddaBrentKung(BoothRadix4, Dadda, ProcessSKY130, BrentKungSKY130Adder):
+class BoothRadix4DaddaBrentKungSKY130(Multiplier, BoothRadix4, Dadda, ProcessSKY130, BrentKungSKY130Adder):
     pass
 
 
@@ -323,10 +323,10 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    mymultiplier = BoothRadix4DaddaBrentKung
+    mymultiplier = BoothRadix4DaddaBrentKungNone
     if args.process:
         if args.process == 'sky130':
-            mymultiplier = SKY130BoothRadix4DaddaBrentKung
+            mymultiplier = BoothRadix4DaddaBrentKungSKY130
         else:
             print("Unknown process")
             exit(1)

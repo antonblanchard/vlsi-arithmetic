@@ -1,6 +1,6 @@
 import sys
-import argparse
 import math
+import argparse
 
 from nmigen import Elaboratable, Module, Signal, Const
 from nmigen.back import verilog

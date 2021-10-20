@@ -3,7 +3,7 @@ import unittest
 import random
 from nmigen.sim import Simulator, Settle
 
-from multiplier import BoothRadix4Dadda
+from multiplier import BoothRadix4DaddaBrentKungNone
 
 
 class TestCaseSpecific(unittest.TestCase):
@@ -29,7 +29,7 @@ class TestCaseSpecific(unittest.TestCase):
 
     def setUp(self):
         self.bits=64
-        self.dut = BoothRadix4Dadda(self.bits)
+        self.dut = BoothRadix4DaddaBrentKungNone(self.bits)
 
     def do_one_comb(self, a, b):
         yield self.dut.a.eq(a)
@@ -54,7 +54,7 @@ class TestCaseSpecific(unittest.TestCase):
 class TestCaseExhaustive(unittest.TestCase):
     def setUp(self):
         self.bits=8
-        self.dut = BoothRadix4Dadda(self.bits)
+        self.dut = BoothRadix4DaddaBrentKungNone(self.bits)
 
     def do_one_comb(self, a, b):
         yield self.dut.a.eq(a)
@@ -78,7 +78,7 @@ class TestCaseExhaustive(unittest.TestCase):
 class TestCaseRandom(unittest.TestCase):
     def setUp(self):
         self.bits=32
-        self.dut = BoothRadix4Dadda(self.bits)
+        self.dut = BoothRadix4DaddaBrentKungNone(self.bits)
 
     def do_one_comb(self, a, b):
         yield self.dut.a.eq(a)
@@ -103,7 +103,7 @@ class TestCaseRandom(unittest.TestCase):
 class TestCasePipelined(unittest.TestCase):
     def setUp(self):
         self.bits = 64
-        self.dut = BoothRadix4Dadda(bits=self.bits, register_input=True, register_middle=True, register_output=True)
+        self.dut = BoothRadix4DaddaBrentKungNone(bits=self.bits, register_input=True, register_middle=True, register_output=True)
 
     def do_one_sync(self, a, b, cycles=3):
         yield self.dut.a.eq(a)

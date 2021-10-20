@@ -4,12 +4,12 @@ import random
 from nmigen import Elaboratable, Module, Signal, Const
 from nmigen.sim import Simulator, Settle
 
-from adder import BrentKung
+from adder import BrentKungNone
 
 class TestCaseRandom(unittest.TestCase):
     def setUp(self):
         self.bits = 64
-        self.dut = BrentKung(self.bits)
+        self.dut = BrentKungNone(self.bits)
 
     def do_one_comb(self, a, b):
         yield self.dut.a.eq(a)
