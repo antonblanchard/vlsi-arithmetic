@@ -1,5 +1,5 @@
 read_verilog -defer gold/multiplier.v
-chparam -set BITS 16 gold_multiplier
+chparam -set BITS 8 gold_multiplier
 prep -flatten -top gold_multiplier
 splitnets -ports
 design -stash gold
@@ -15,7 +15,7 @@ equiv_make gold gate equiv
 prep -flatten -top equiv
 
 opt_clean -purge
-show -prefix equiv-prep -colors 1 -stretch
+#show -prefix equiv-prep -colors 1 -stretch
 
 ## method 1
 opt -full
