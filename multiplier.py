@@ -2,7 +2,7 @@ import sys
 import math
 import argparse
 
-from nmigen import Elaboratable, Module, Signal, Cat, Const, Instance
+from nmigen import Elaboratable, Module, Signal, Cat, Const
 from nmigen.back import verilog
 
 from sky130_cells import SKY130
@@ -21,9 +21,25 @@ class Multiplier(Elaboratable):
         self._register_input = register_input
         self._register_middle = register_middle
         self._register_output = register_output
+
+        # partial product generation writes to this
         self._partial_products = [[] for i in range(bits*2)]
+
+        # partial product accumulation writes to these
         self._final_a = Signal(bits*2)
         self._final_b = Signal(bits*2)
+
+        # Final addition writes to this
+        self.result = Signal(bits*2)
+
+        # We optionally register inputs, outputs and in between
+        # partial product accumulation and the final addition.
+        self.a_registered = Signal(bits, reset_less=True)
+        self.b_registered = Signal(bits, reset_less=True)
+        if multiply_add:
+            self.c_registered = Signal(bits, reset_less=True)
+        self._final_a_registered = Signal(bits*2, reset_less=True)
+        self._final_b_registered = Signal(bits*2, reset_less=True)
 
     def _gen_partial_products(self):
         pass
@@ -104,6 +120,17 @@ class Multiplier(Elaboratable):
     def elaborate(self, platform):
         self.m = Module()
 
+        if self._register_input:
+            self.m.d.sync += self.a_registered.eq(self.a)
+            self.m.d.sync += self.b_registered.eq(self.b)
+            if self._multiply_add:
+                self.m.d.sync += self.c_registered.eq(self.c)
+        else:
+            self.m.d.comb += self.a_registered.eq(self.a),
+            self.m.d.comb += self.b_registered.eq(self.b),
+            if self._multiply_add:
+                self.m.d.comb += self.c_registered.eq(self.c)
+
         self._gen_partial_products()
 
         if self._multiply_add:
@@ -111,7 +138,20 @@ class Multiplier(Elaboratable):
                 self._partial_products[i].append(self.c[i])
 
         self._acc_partial_products()
+
+        if self._register_middle:
+            self.m.d.sync += self._final_a_registered.eq(self._final_a)
+            self.m.d.sync += self._final_b_registered.eq(self._final_b)
+        else:
+            self.m.d.comb += self._final_a_registered.eq(self._final_a)
+            self.m.d.comb += self._final_b_registered.eq(self._final_b)
+
         self._final_adder()
+
+        if self._register_output:
+            self.m.d.sync += self.o.eq(self.result)
+        else:
+            self.m.d.comb += self.o.eq(self.result)
 
         return self.m
 
@@ -125,8 +165,8 @@ class BoothRadix4(Multiplier):
 
         # Add a zero in the LSB of the multiplier and multiplicand
         self.m.d.comb += [
-            multiplier.eq(Cat(Const(0), self.a, Const(0), Const(0))),
-            multiplicand.eq(Cat(Const(0), self.b)),
+            multiplier.eq(Cat(Const(0), self.a_registered, Const(0), Const(0))),
+            multiplicand.eq(Cat(Const(0), self.b_registered)),
         ]
 
         last_b = self._bits
@@ -187,7 +227,7 @@ class SchoolBook(Multiplier):
 # Use optimised adder
 class Adder(Multiplier):
     def _final_adder(self):
-        self.m.d.comb += self.o.eq(self._final_a + self._final_b)
+        self.m.d.comb += self.result.eq(self._final_a_registered + self._final_b_registered)
 
 
 class Dadda(Multiplier):
@@ -296,7 +336,9 @@ if __name__ == "__main__":
             print("Unknown process")
             exit(1)
 
-    multiplier = mymultiplier(bits=args.bits, multiply_add=args.multiply_add, register_input=args.register_input, register_middle=args.register_input, register_output=args.register_output)
+    multiplier = mymultiplier(bits=args.bits, multiply_add=args.multiply_add,
+                    register_input=args.register_input, register_middle=args.register_middle,
+                    register_output=args.register_output)
 
     ports = [multiplier.a, multiplier.b, multiplier.o]
     if args.multiply_add:
