@@ -1,12 +1,12 @@
 read_verilog -defer gold/multiplier.v
 chparam -set BITS 16 gold_multiplier
 prep -flatten -top gold_multiplier
-splitnets -ports;;
+splitnets -ports
 design -stash gold
 
 read_verilog multiplier_sky130.v sky130/sky130_fd_sc_hd.v
 prep -flatten -top multiplier
-splitnets -ports;;
+splitnets -ports
 design -stash gate
 
 design -copy-from gold -as gold gold_multiplier

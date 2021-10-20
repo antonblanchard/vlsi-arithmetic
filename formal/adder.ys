@@ -1,12 +1,12 @@
 read_verilog -defer gold/adder.v
 chparam -set BITS 64 gold_adder
 prep -flatten -top gold_adder
-splitnets -ports;;
+splitnets -ports
 design -stash gold
 
 read_verilog adder_sky130.v sky130/sky130_fd_sc_hd.v
 prep -flatten -top adder
-splitnets -ports;;
+splitnets -ports
 design -stash gate
 
 design -copy-from gold -as gold gold_adder
@@ -15,7 +15,7 @@ equiv_make gold gate equiv
 prep -flatten -top equiv
 
 opt_clean -purge
-show -prefix equiv-prep -colors 1 -stretch
+#show -prefix equiv-prep -colors 1 -stretch
 
 ## method 1
 opt -full
