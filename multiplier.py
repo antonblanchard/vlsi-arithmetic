@@ -301,7 +301,7 @@ if __name__ == "__main__":
     parser.add_argument('--bits', type=int,
             help='Width in bits of adder', default=32)
 
-    parser.add_argument('--multiply_add', action='store_true',
+    parser.add_argument('--multiply-add', action='store_true',
             help='Multiply add (a*b+c)')
 
     parser.add_argument('--register-input', action='store_true',
@@ -334,7 +334,9 @@ if __name__ == "__main__":
                     register_output=args.register_output)
 
     ports = [multiplier.a, multiplier.b, multiplier.o]
+    name='multiplier'
     if args.multiply_add:
         ports.append(multiplier.c)
+        name='multiply_adder'
 
-    args.output.write(verilog.convert(multiplier, ports=ports, name='multiplier', strip_internal_attrs=True))
+    args.output.write(verilog.convert(multiplier, ports=ports, name=name, strip_internal_attrs=True))
