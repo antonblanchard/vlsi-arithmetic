@@ -61,7 +61,7 @@ class Multiplier(Elaboratable):
         self._gen_partial_products()
 
         if self._multiply_add:
-            for i in range(self._bits):
+            for i in range(self._bits*2):
                 self._partial_products[i].append(self.c[i])
 
         self._acc_partial_products()
@@ -129,8 +129,8 @@ class BoothRadix4(Elaboratable):
         self._generate_xor(t, sign, o)
 
     def _gen_partial_products(self):
-        # Double check this
-        self._partial_products = [[] for i in range((self._bits)*2+1)]
+        # FIXME: We should avoid writing these top 2 bits
+        self._partial_products = [[] for i in range((self._bits)*2+2)]
 
         multiplier = Signal(self._bits+3)
         multiplicand = Signal(self._bits+2)
