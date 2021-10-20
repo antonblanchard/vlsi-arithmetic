@@ -102,19 +102,19 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Create Verilog Adder')
 
     parser.add_argument('--bits', type=int,
-            help='Width in bits of adder', default=32)
+                        help='Width in bits of adder', default=32)
 
     parser.add_argument('--register-input', action='store_true',
-            help='Add a register stage to the input')
+                        help='Add a register stage to the input')
 
     parser.add_argument('--register-output', action='store_true',
-            help='Add a register stage to the output')
+                        help='Add a register stage to the output')
 
     parser.add_argument('--process',
-            help='What process to build for, eg sky130')
+                        help='What process to build for, eg sky130')
 
     parser.add_argument('--output', type=argparse.FileType('w'), default=sys.stdout,
-            help='Write output to this file')
+                        help='Write output to this file')
 
     args = parser.parse_args()
 
@@ -128,4 +128,4 @@ if __name__ == "__main__":
 
     adder = myadder(bits=args.bits, register_input=args.register_input, register_output=args.register_output)
 
-    args.output.write(verilog.convert(adder, ports = [adder.a, adder.b, adder.o], name='adder', strip_internal_attrs=True))
+    args.output.write(verilog.convert(adder, ports=[adder.a, adder.b, adder.o], name='adder', strip_internal_attrs=True))
