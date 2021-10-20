@@ -75,10 +75,13 @@ class Multiplier(Elaboratable):
 
         self._final_adder()
 
+        o2 = Signal(self._bits, reset_less=True)
         if self._register_output:
-            self.m.d.sync += self.o.eq(self.result)
+            self.m.d.sync += o2.eq(self.result)
         else:
-            self.m.d.comb += self.o.eq(self.result)
+            self.m.d.comb += o2.eq(self.result)
+
+        self.m.d.comb += self.o.eq(o2)
 
         return self.m
 
