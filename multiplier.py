@@ -6,6 +6,7 @@ from nmigen import Elaboratable, Module, Signal, Cat, Const
 from nmigen.back import verilog
 
 from sky130_cells import SKY130
+from adder import SKY130BrentKung
 
 
 class Multiplier(Elaboratable):
@@ -224,12 +225,6 @@ class SchoolBook(Multiplier):
                 self._generate_and(self.a[off_a], self.b[off_b], o)
 
 
-# Use optimised adder
-class Adder(Multiplier):
-    def _final_adder(self):
-        self.m.d.comb += self.result.eq(self._final_a_registered + self._final_b_registered)
-
-
 class Dadda(Multiplier):
     # Dadda heights are d(0) = 2, d(n+1) = floor(1.5*d(n))
     def _calc_dadda_heights(self, bits):
@@ -294,11 +289,28 @@ class Dadda(Multiplier):
         self._final_b = Cat(self._partial_products[n][1] for n in range(len(self._partial_products)))
 
 
-class BoothRadix4Dadda(BoothRadix4, Dadda, Adder):
+class InferredAdder(Multiplier):
+    def _final_adder(self):
+        self.m.d.comb += self.result.eq(self._final_a_registered + self._final_b_registered)
+
+
+class SKY130BrentKungAdder(Multiplier):
+    def _final_adder(self):
+        adder = SKY130BrentKung(bits=self._bits)
+        self.m.submodules += adder
+
+        self.m.d.comb += [
+                adder.a.eq(self._final_a_registered),
+                adder.b.eq(self._final_b_registered),
+                self.result.eq(adder.o),
+        ]
+
+
+class BoothRadix4DaddaBrentKung(BoothRadix4, Dadda, SKY130BrentKungAdder):
     pass
 
 
-class SKY130BoothRadix4Dadda(SKY130, BoothRadix4, Dadda, Adder):
+class SKY130BoothRadix4DaddaBrentKung(SKY130, BoothRadix4, Dadda, SKY130BrentKungAdder):
     pass
 
 
@@ -328,10 +340,10 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    mymultiplier = BoothRadix4Dadda
+    mymultiplier = BoothRadix4DaddaBrentKung
     if args.process:
         if args.process == 'sky130':
-            mymultiplier = SKY130BoothRadix4Dadda
+            mymultiplier = SKY130BoothRadix4DaddaBrentKung
         else:
             print("Unknown process")
             exit(1)
