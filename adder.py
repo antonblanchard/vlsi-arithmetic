@@ -5,7 +5,7 @@ import math
 from nmigen import Elaboratable, Module, Signal, Const
 from nmigen.back import verilog
 
-from sky130_cells import ProcessSKY130
+from process_sky130 import ProcessSKY130
 from process_none import ProcessNone
 
 
