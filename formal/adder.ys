@@ -4,7 +4,7 @@ prep -flatten -top gold_adder
 splitnets -ports
 design -stash gold
 
-read_verilog adder_sky130.v sky130/sky130_fd_sc_hd.v
+read_verilog generated/adder_sky130.v sky130/sky130_fd_sc_hd.v
 prep -flatten -top adder
 splitnets -ports
 design -stash gate
