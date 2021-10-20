@@ -1,6 +1,6 @@
 from nmigen import Elaboratable, Instance
 
-class SKY130(Elaboratable):
+class ProcessSKY130(Elaboratable):
     def _generate_and(self, a, b, o):
         andgate = Instance(
             "sky130_fd_sc_hd__and2_1",

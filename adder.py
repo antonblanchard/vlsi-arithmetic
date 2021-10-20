@@ -5,7 +5,8 @@ import math
 from nmigen import Elaboratable, Module, Signal, Const
 from nmigen.back import verilog
 
-from sky130_cells import SKY130
+from sky130_cells import ProcessSKY130
+from process_none import ProcessNone
 
 
 class BrentKung(Elaboratable):
@@ -17,22 +18,6 @@ class BrentKung(Elaboratable):
         self._bits = bits
         self._register_input = register_input
         self._register_output = register_output
-
-    def _generate_and(self, a, b, o):
-        self.m.d.comb += o.eq(a & b)
-
-    def _generate_xor(self, a, b, o):
-        self.m.d.comb += o.eq(a ^ b)
-
-    def _generate_half_adder(self, a, b, s, co):
-        self.m.d.comb += [
-            s.eq(a ^ b),
-            co.eq(a & b),
-        ]
-
-    def _generate_and21_or2(self, a, b, c, o):
-        # 2-input AND into first input of 2-input OR
-        self.m.d.comb += o.eq((a & b) | c)
 
     def elaborate(self, platform):
         self.m = m = Module()
@@ -105,7 +90,11 @@ class BrentKung(Elaboratable):
         return m
 
 
-class SKY130BrentKung(SKY130, BrentKung):
+class BrentKungNone(BrentKung, ProcessNone):
+    pass
+
+
+class BrentKungSKY130(BrentKung, ProcessSKY130):
     pass
 
 
@@ -129,10 +118,10 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    myadder = BrentKung
+    myadder = BrentKungNone
     if args.process:
         if args.process == 'sky130':
-            myadder = SKY130BrentKung
+            myadder = BrentKungSKY130
         else:
             print("Unknown process")
             exit(1)

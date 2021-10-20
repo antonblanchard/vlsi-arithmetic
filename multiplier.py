@@ -5,8 +5,10 @@ import argparse
 from nmigen import Elaboratable, Module, Signal, Cat, Const
 from nmigen.back import verilog
 
-from sky130_cells import SKY130
-from adder import SKY130BrentKung
+from sky130_cells import ProcessSKY130
+from process_none import ProcessNone
+
+from adder import BrentKungNone, BrentKungSKY130
 
 
 class Multiplier(Elaboratable):
@@ -42,38 +44,46 @@ class Multiplier(Elaboratable):
         self._final_a_registered = Signal(bits*2, reset_less=True)
         self._final_b_registered = Signal(bits*2, reset_less=True)
 
-    def _gen_partial_products(self):
-        pass
+    def elaborate(self, platform):
+        self.m = Module()
 
-    def _acc_partial_products(self):
-        pass
+        if self._register_input:
+            self.m.d.sync += self.a_registered.eq(self.a)
+            self.m.d.sync += self.b_registered.eq(self.b)
+            if self._multiply_add:
+                self.m.d.sync += self.c_registered.eq(self.c)
+        else:
+            self.m.d.comb += self.a_registered.eq(self.a),
+            self.m.d.comb += self.b_registered.eq(self.b),
+            if self._multiply_add:
+                self.m.d.comb += self.c_registered.eq(self.c)
 
-    def _final_adder(self):
-        pass
+        self._gen_partial_products()
 
-    def _generate_full_adder(self, a, b, carry_in, sum_out, carry_out, name):
-        self.m.d.comb += Cat(sum_out, carry_out).eq(a + b + carry_in)
+        if self._multiply_add:
+            for i in range(self._bits):
+                self._partial_products[i].append(self.c[i])
 
-    def _generate_half_adder(self, a, b, sum_out, carry_out, name):
-        self.m.d.comb += Cat(sum_out, carry_out).eq(a + b)
+        self._acc_partial_products()
 
-    def _generate_and(self, a, b, o):
-        self.m.d.comb += o.eq(a & b)
+        if self._register_middle:
+            self.m.d.sync += self._final_a_registered.eq(self._final_a)
+            self.m.d.sync += self._final_b_registered.eq(self._final_b)
+        else:
+            self.m.d.comb += self._final_a_registered.eq(self._final_a)
+            self.m.d.comb += self._final_b_registered.eq(self._final_b)
 
-    def _generate_xor(self, a, b, o):
-        self.m.d.comb += o.eq(a ^ b)
+        self._final_adder()
 
-    def _generate_inv(self, a, o):
-        self.m.d.comb += o.eq(~a)
+        if self._register_output:
+            self.m.d.sync += self.o.eq(self.result)
+        else:
+            self.m.d.comb += self.o.eq(self.result)
 
-    def _generate_and2_or2(self, a1, a2, b1, b2, o):
-        # 2-input AND into both inputs of 2-input OR
-        self.m.d.comb += o.eq((a1 & a2) | (b1 & b2))
+        return self.m
 
-    def _generate_and32_or2(self, a1, a2, a3, b1, b2, o):
-        # 3-input AND into first input, and 2-input AND into 2nd input of 2-input OR
-        self.m.d.comb += o.eq((a1 & a2 & a3) | (b1 & b2))
 
+class BoothRadix4(Multiplier):
     def _generate_booth_encoder(self, block, sign, sel):
         # This is the standard booth encoder. We output a sign bit
         # and a 2 bit multiplicand selector:
@@ -118,45 +128,6 @@ class Multiplier(Elaboratable):
         self._generate_and2_or2(multiplicand[0], sel[0], multiplicand[1], sel[1], t)
         self._generate_xor(t, sign, o)
 
-    def elaborate(self, platform):
-        self.m = Module()
-
-        if self._register_input:
-            self.m.d.sync += self.a_registered.eq(self.a)
-            self.m.d.sync += self.b_registered.eq(self.b)
-            if self._multiply_add:
-                self.m.d.sync += self.c_registered.eq(self.c)
-        else:
-            self.m.d.comb += self.a_registered.eq(self.a),
-            self.m.d.comb += self.b_registered.eq(self.b),
-            if self._multiply_add:
-                self.m.d.comb += self.c_registered.eq(self.c)
-
-        self._gen_partial_products()
-
-        if self._multiply_add:
-            for i in range(self._bits):
-                self._partial_products[i].append(self.c[i])
-
-        self._acc_partial_products()
-
-        if self._register_middle:
-            self.m.d.sync += self._final_a_registered.eq(self._final_a)
-            self.m.d.sync += self._final_b_registered.eq(self._final_b)
-        else:
-            self.m.d.comb += self._final_a_registered.eq(self._final_a)
-            self.m.d.comb += self._final_b_registered.eq(self._final_b)
-
-        self._final_adder()
-
-        if self._register_output:
-            self.m.d.sync += self.o.eq(self.result)
-        else:
-            self.m.d.comb += self.o.eq(self.result)
-
-        return self.m
-
-class BoothRadix4(Multiplier):
     def _gen_partial_products(self):
         # Double check this
         self._partial_products = [[] for i in range((self._bits)*2+1)]
@@ -289,14 +260,14 @@ class Dadda(Multiplier):
         self._final_b = Cat(self._partial_products[n][1] for n in range(len(self._partial_products)))
 
 
-class InferredAdder(Multiplier):
+class InferredAdder(Elaboratable):
     def _final_adder(self):
         self.m.d.comb += self.result.eq(self._final_a_registered + self._final_b_registered)
 
 
-class SKY130BrentKungAdder(Multiplier):
+class BrentKungNoneAdder(Elaboratable):
     def _final_adder(self):
-        adder = SKY130BrentKung(bits=self._bits)
+        adder = BrentKungNone(bits=self._bits)
         self.m.submodules += adder
 
         self.m.d.comb += [
@@ -306,11 +277,23 @@ class SKY130BrentKungAdder(Multiplier):
         ]
 
 
-class BoothRadix4DaddaBrentKung(BoothRadix4, Dadda, SKY130BrentKungAdder):
+class BrentKungSKY130Adder(Elaboratable):
+    def _final_adder(self):
+        adder = BrentKungSKY130(bits=self._bits)
+        self.m.submodules += adder
+
+        self.m.d.comb += [
+                adder.a.eq(self._final_a_registered),
+                adder.b.eq(self._final_b_registered),
+                self.result.eq(adder.o),
+        ]
+
+
+class BoothRadix4DaddaBrentKung(BoothRadix4, Dadda, ProcessNone, BrentKungNoneAdder):
     pass
 
 
-class SKY130BoothRadix4DaddaBrentKung(SKY130, BoothRadix4, Dadda, SKY130BrentKungAdder):
+class SKY130BoothRadix4DaddaBrentKung(BoothRadix4, Dadda, ProcessSKY130, BrentKungSKY130Adder):
     pass
 
 
