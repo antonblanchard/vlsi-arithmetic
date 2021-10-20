@@ -1,5 +1,6 @@
 from nmigen import Elaboratable, Cat
 
+
 class ProcessNone(Elaboratable):
     def _generate_and(self, a, b, o):
         self.m.d.comb += o.eq(a & b)
