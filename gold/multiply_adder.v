@@ -1,4 +1,4 @@
-module gold_multiplier_adder
+module gold_multiply_adder
 #(
     parameter BITS=64
 ) (
