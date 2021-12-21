@@ -1,8 +1,8 @@
 import unittest
 import random
 
-from nmigen import Elaboratable, Module, Signal, Const
-from nmigen.sim import Simulator, Settle
+from amaranth import Elaboratable, Module, Signal, Const
+from amaranth.sim import Simulator, Settle
 
 from adder import BrentKungNone
 

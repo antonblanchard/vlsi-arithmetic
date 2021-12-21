@@ -2,8 +2,8 @@ import sys
 import math
 import argparse
 
-from nmigen import Elaboratable, Module, Signal, Const
-from nmigen.back import verilog
+from amaranth import Elaboratable, Module, Signal, Const
+from amaranth.back import verilog
 
 from process_sky130 import ProcessSKY130
 from process_none import ProcessNone

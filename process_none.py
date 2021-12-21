@@ -1,4 +1,4 @@
-from nmigen import Elaboratable, Cat
+from amaranth import Elaboratable, Cat
 
 
 class ProcessNone(Elaboratable):

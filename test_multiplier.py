@@ -1,7 +1,7 @@
 import math
 import unittest
 import random
-from nmigen.sim import Simulator, Settle
+from amaranth.sim import Simulator, Settle
 
 from multiplier import BoothRadix4DaddaBrentKungNone
 
@@ -102,14 +102,14 @@ class TestCaseRandom(unittest.TestCase):
 
 class TestCasePipelined(unittest.TestCase):
     def setUp(self):
-        self.bits = 64
+        self.bits = 32
         self.dut = BoothRadix4DaddaBrentKungNone(bits=self.bits, register_input=True, register_middle=True, register_output=True)
 
     def do_one_sync(self, a, b, cycles=3):
         yield self.dut.a.eq(a)
         yield self.dut.b.eq(b)
 
-        # Why do we need this extra yield? I don't understand something about the nmigen simulator
+        # Why do we need this extra yield? I don't understand something about the amaranth simulator
         yield
 
         for i in range(cycles):

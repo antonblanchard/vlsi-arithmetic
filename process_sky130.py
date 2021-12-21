@@ -1,4 +1,4 @@
-from nmigen import Elaboratable, Instance
+from amaranth import Elaboratable, Instance
 
 
 class ProcessSKY130(Elaboratable):
