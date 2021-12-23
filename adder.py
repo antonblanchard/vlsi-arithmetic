@@ -14,6 +14,8 @@ class BrentKung(Elaboratable):
         self.a = Signal(bits)
         self.b = Signal(bits)
         self.o = Signal(bits)
+        self.VPWR = Signal()
+        self.VGND = Signal()
 
         self._bits = bits
         self._register_input = register_input
@@ -128,4 +130,4 @@ if __name__ == "__main__":
 
     adder = myadder(bits=args.bits, register_input=args.register_input, register_output=args.register_output)
 
-    args.output.write(verilog.convert(adder, ports=[adder.a, adder.b, adder.o], name='adder', strip_internal_attrs=True))
+    args.output.write(verilog.convert(adder, ports=[adder.a, adder.b, adder.o, adder.VPWR, adder.VGND], name='adder', strip_internal_attrs=True))

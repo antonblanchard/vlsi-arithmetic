@@ -8,10 +8,10 @@ class ProcessSKY130(Elaboratable):
             i_A=a,
             i_B=b,
             o_X=o,
-            #i_VPWR=
-            #i_VGND=
-            #i_VPB=
-            #i_VNB=
+            i_VPWR=self.VPWR,
+            i_VPB=self.VPWR,
+            i_VGND=self.VGND,
+            i_VNB=self.VGND
         )
 
         self.m.submodules += andgate
@@ -22,10 +22,10 @@ class ProcessSKY130(Elaboratable):
             i_A=a,
             i_B=b,
             o_X=o,
-            #i_VPWR=
-            #i_VGND=
-            #i_VPB=
-            #i_VNB=
+            i_VPWR=self.VPWR,
+            i_VPB=self.VPWR,
+            i_VGND=self.VGND,
+            i_VNB=self.VGND
         )
 
         self.m.submodules += xorgate
@@ -35,10 +35,10 @@ class ProcessSKY130(Elaboratable):
             "sky130_fd_sc_hd__inv_1",
             i_A=a,
             o_Y=o,
-            #i_VPWR=
-            #i_VGND=
-            #i_VPB=
-            #i_VNB=
+            i_VPWR=self.VPWR,
+            i_VPB=self.VPWR,
+            i_VGND=self.VGND,
+            i_VNB=self.VGND
         )
 
         self.m.submodules += invgate
@@ -51,10 +51,10 @@ class ProcessSKY130(Elaboratable):
             i_A=a,
             i_B=b,
             i_CIN=carry_in,
-            #i_VPWR=
-            #i_VGND=
-            #i_VPB=
-            #i_VNB=
+            i_VPWR=self.VPWR,
+            i_VPB=self.VPWR,
+            i_VGND=self.VGND,
+            i_VNB=self.VGND
         )
         if name:
             self.m.submodules[name] = fa
@@ -68,10 +68,10 @@ class ProcessSKY130(Elaboratable):
             o_SUM=sum_out,
             i_A=a,
             i_B=b,
-            #i_VPWR=
-            #i_VGND=
-            #i_VPB=
-            #i_VNB=
+            i_VPWR=self.VPWR,
+            i_VPB=self.VPWR,
+            i_VGND=self.VGND,
+            i_VNB=self.VGND
         )
 
         if name:
@@ -88,10 +88,10 @@ class ProcessSKY130(Elaboratable):
             i_A1=a1,
             i_A2=a2,
             i_B1=b1,
-            #i_VPWR=
-            #i_VGND=
-            #i_VPB=
-            #i_VNB=
+            i_VPWR=self.VPWR,
+            i_VPB=self.VPWR,
+            i_VGND=self.VGND,
+            i_VNB=self.VGND
         )
 
         self.m.submodules += a21o
@@ -106,10 +106,10 @@ class ProcessSKY130(Elaboratable):
             i_B1=b1,
             i_B2=b2,
             o_X=o,
-            #i_VPWR=
-            #i_VGND=
-            #i_VPB=
-            #i_VNB=
+            i_VPWR=self.VPWR,
+            i_VPB=self.VPWR,
+            i_VGND=self.VGND,
+            i_VNB=self.VGND
         )
 
         self.m.submodules += a22ogate
@@ -125,10 +125,10 @@ class ProcessSKY130(Elaboratable):
             i_B1=b1,
             i_B2=b2,
             o_X=o,
-            #i_VPWR=
-            #i_VGND=
-            #i_VPB=
-            #i_VNB=
+            i_VPWR=self.VPWR,
+            i_VPB=self.VPWR,
+            i_VGND=self.VGND,
+            i_VNB=self.VGND
         )
 
         self.m.submodules += a32ogate

@@ -18,6 +18,8 @@ class Multiplier(Elaboratable):
         if multiply_add:
             self.c = Signal(bits*2)
         self.o = Signal(bits*2)
+        self.VPWR = Signal()
+        self.VGND = Signal()
 
         self._bits = bits
         self._multiply_add = multiply_add
@@ -287,6 +289,8 @@ class BrentKungSKY130Adder(Elaboratable):
             adder.a.eq(self._final_a_registered),
             adder.b.eq(self._final_b_registered),
             self.result.eq(adder.o),
+            adder.VPWR.eq(self.VPWR),
+            adder.VGND.eq(self.VGND),
         ]
 
 
@@ -342,5 +346,6 @@ if __name__ == "__main__":
     if args.multiply_add:
         ports.append(multiplier.c)
         name = 'multiply_adder'
+    ports.extend([multiplier.VPWR, multiplier.VGND])
 
     args.output.write(verilog.convert(multiplier, ports=ports, name=name, strip_internal_attrs=True))
