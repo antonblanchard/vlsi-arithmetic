@@ -12,16 +12,19 @@ from adder import BrentKungNone, BrentKungSKY130
 
 
 class Multiplier(Elaboratable):
-    def __init__(self, bits=64, multiply_add=False, register_input=False, register_middle=False, register_output=False):
+    def __init__(self, bits=64, multiply_add=False, register_input=False, register_middle=False, register_output=False, powered=False):
         self.a = Signal(bits)
         self.b = Signal(bits)
         if multiply_add:
             self.c = Signal(bits*2)
         self.o = Signal(bits*2)
 
-        self._powered = True
-        self.VPWR = Signal()
-        self.VGND = Signal()
+        if powered:
+            self._powered = True
+            self.VPWR = Signal()
+            self.VGND = Signal()
+        else:
+            self._powered = False
 
         self._bits = bits
         self._multiply_add = multiply_add
@@ -291,9 +294,12 @@ class BrentKungSKY130Adder(Elaboratable):
             adder.a.eq(self._final_a_registered),
             adder.b.eq(self._final_b_registered),
             self.result.eq(adder.o),
-            adder.VPWR.eq(self.VPWR),
-            adder.VGND.eq(self.VGND),
         ]
+        if self._powered:
+            self.m.d.comb += [
+                adder.VPWR.eq(self.VPWR),
+                adder.VGND.eq(self.VGND),
+            ]
 
 
 class BoothRadix4DaddaBrentKungNone(Multiplier, BoothRadix4, Dadda, ProcessNone, BrentKungNoneAdder):
@@ -322,6 +328,9 @@ if __name__ == "__main__":
     parser.add_argument('--register-output', action='store_true',
                         help='Add a register stage to the output')
 
+    parser.add_argument('--powered', action='store_true',
+                        help='Add power pins (VPWR/VGND)')
+
     parser.add_argument('--process',
                         help='What process to build for, eg sky130')
 
@@ -341,13 +350,15 @@ if __name__ == "__main__":
     multiplier = mymultiplier(bits=args.bits, multiply_add=args.multiply_add,
                               register_input=args.register_input,
                               register_middle=args.register_middle,
-                              register_output=args.register_output)
+                              register_output=args.register_output,
+                              powered=args.powered)
 
     ports = [multiplier.a, multiplier.b, multiplier.o]
     name = 'multiplier'
     if args.multiply_add:
         ports.append(multiplier.c)
         name = 'multiply_adder'
-    ports.extend([multiplier.VPWR, multiplier.VGND])
+    if args.powered:
+        ports.extend([multiplier.VPWR, multiplier.VGND])
 
     args.output.write(verilog.convert(multiplier, ports=ports, name=name, strip_internal_attrs=True))

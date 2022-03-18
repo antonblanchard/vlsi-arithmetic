@@ -10,14 +10,17 @@ from process_none import ProcessNone
 
 
 class BrentKung(Elaboratable):
-    def __init__(self, bits=64, register_input=False, register_output=False):
+    def __init__(self, bits=64, register_input=False, register_output=False, powered=False):
         self.a = Signal(bits)
         self.b = Signal(bits)
         self.o = Signal(bits)
 
-        self._powered = True
-        self.VPWR = Signal()
-        self.VGND = Signal()
+        if powered:
+            self._powered = True
+            self.VPWR = Signal()
+            self.VGND = Signal()
+        else:
+            self._powered = False
 
         self._bits = bits
         self._register_input = register_input
@@ -117,6 +120,9 @@ if __name__ == "__main__":
     parser.add_argument('--process',
                         help='What process to build for, eg sky130')
 
+    parser.add_argument('--powered', action='store_true',
+                        help='Add power pins (VPWR/VGND)')
+
     parser.add_argument('--output', type=argparse.FileType('w'), default=sys.stdout,
                         help='Write output to this file')
 
@@ -130,6 +136,10 @@ if __name__ == "__main__":
             print("Unknown process")
             exit(1)
 
-    adder = myadder(bits=args.bits, register_input=args.register_input, register_output=args.register_output)
+    adder = myadder(bits=args.bits, register_input=args.register_input, register_output=args.register_output, powered=self.powered)
 
-    args.output.write(verilog.convert(adder, ports=[adder.a, adder.b, adder.o, adder.VPWR, adder.VGND], name='adder', strip_internal_attrs=True))
+    ports = [adder.a, adder.b, adder.o]
+    if args.powered:
+        ports.extend([adder.VPWR, adder.VGND])
+
+    args.output.write(verilog.convert(adder, ports=ports, name='adder', strip_internal_attrs=True))
