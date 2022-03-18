@@ -18,6 +18,8 @@ class Multiplier(Elaboratable):
         if multiply_add:
             self.c = Signal(bits*2)
         self.o = Signal(bits*2)
+
+        self._powered = True
         self.VPWR = Signal()
         self.VGND = Signal()
 

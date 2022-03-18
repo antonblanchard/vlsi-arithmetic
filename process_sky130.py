@@ -2,59 +2,53 @@ from amaranth import Elaboratable, Instance
 
 
 class ProcessSKY130(Elaboratable):
+    def _PoweredInstance(self, *args, **kwargs):
+        if self._powered:
+            kwargs.update({
+                "i_VPWR" : self.VPWR,
+                "i_VPB"  : self.VPWR,
+                "i_VGND" : self.VGND,
+                "i_VNB"  : self.VGND
+            })
+        return Instance(*args, **kwargs)
+
     def _generate_and(self, a, b, o):
-        andgate = Instance(
+        andgate = self._PoweredInstance(
             "sky130_fd_sc_hd__and2_1",
             i_A=a,
             i_B=b,
-            o_X=o,
-            i_VPWR=self.VPWR,
-            i_VPB=self.VPWR,
-            i_VGND=self.VGND,
-            i_VNB=self.VGND
+            o_X=o
         )
 
         self.m.submodules += andgate
 
     def _generate_xor(self, a, b, o):
-        xorgate = Instance(
+        xorgate = self._PoweredInstance(
             "sky130_fd_sc_hd__xor2_1",
             i_A=a,
             i_B=b,
-            o_X=o,
-            i_VPWR=self.VPWR,
-            i_VPB=self.VPWR,
-            i_VGND=self.VGND,
-            i_VNB=self.VGND
+            o_X=o
         )
 
         self.m.submodules += xorgate
 
     def _generate_inv(self, a, o):
-        invgate = Instance(
+        invgate = self._PoweredInstance(
             "sky130_fd_sc_hd__inv_1",
             i_A=a,
-            o_Y=o,
-            i_VPWR=self.VPWR,
-            i_VPB=self.VPWR,
-            i_VGND=self.VGND,
-            i_VNB=self.VGND
+            o_Y=o
         )
 
         self.m.submodules += invgate
 
     def _generate_full_adder(self, a, b, carry_in, sum_out, carry_out, name=None):
-        fa = Instance(
+        fa = self._PoweredInstance(
             "sky130_fd_sc_hd__fa_1",
             o_COUT=carry_out,
             o_SUM=sum_out,
             i_A=a,
             i_B=b,
-            i_CIN=carry_in,
-            i_VPWR=self.VPWR,
-            i_VPB=self.VPWR,
-            i_VGND=self.VGND,
-            i_VNB=self.VGND
+            i_CIN=carry_in
         )
         if name:
             self.m.submodules[name] = fa
@@ -62,16 +56,12 @@ class ProcessSKY130(Elaboratable):
             self.m.submodules += fa
 
     def _generate_half_adder(self, a, b, sum_out, carry_out, name=None):
-        ha = Instance(
+        ha = self._PoweredInstance(
             "sky130_fd_sc_hd__ha_1",
             o_COUT=carry_out,
             o_SUM=sum_out,
             i_A=a,
-            i_B=b,
-            i_VPWR=self.VPWR,
-            i_VPB=self.VPWR,
-            i_VGND=self.VGND,
-            i_VNB=self.VGND
+            i_B=b
         )
 
         if name:
@@ -82,16 +72,12 @@ class ProcessSKY130(Elaboratable):
     # Used in adder
     def _generate_and21_or2(self, a1, a2, b1, o):
         # 2-input AND into first input of 2-input OR
-        a21o = Instance(
+        a21o = self._PoweredInstance(
             "sky130_fd_sc_hd__a21o_1",
             o_X=o,
             i_A1=a1,
             i_A2=a2,
-            i_B1=b1,
-            i_VPWR=self.VPWR,
-            i_VPB=self.VPWR,
-            i_VGND=self.VGND,
-            i_VNB=self.VGND
+            i_B1=b1
         )
 
         self.m.submodules += a21o
@@ -99,17 +85,13 @@ class ProcessSKY130(Elaboratable):
     # Used in multiplier
     def _generate_and2_or2(self, a1, a2, b1, b2, o):
         # 2-input AND into both inputs of 2-input OR
-        a22ogate = Instance(
+        a22ogate = self._PoweredInstance(
             "sky130_fd_sc_hd__a22o_1",
             i_A1=a1,
             i_A2=a2,
             i_B1=b1,
             i_B2=b2,
-            o_X=o,
-            i_VPWR=self.VPWR,
-            i_VPB=self.VPWR,
-            i_VGND=self.VGND,
-            i_VNB=self.VGND
+            o_X=o
         )
 
         self.m.submodules += a22ogate
@@ -117,18 +99,14 @@ class ProcessSKY130(Elaboratable):
     # Used in multiplier
     def _generate_and32_or2(self, a1, a2, a3, b1, b2, o):
         # 3-input AND into first input, and 2-input AND into 2nd input of 2-input OR
-        a32ogate = Instance(
+        a32ogate = self._PoweredInstance(
             "sky130_fd_sc_hd__a32o_1",
             i_A1=a1,
             i_A2=a2,
             i_A3=a3,
             i_B1=b1,
             i_B2=b2,
-            o_X=o,
-            i_VPWR=self.VPWR,
-            i_VPB=self.VPWR,
-            i_VGND=self.VGND,
-            i_VNB=self.VGND
+            o_X=o
         )
 
         self.m.submodules += a32ogate

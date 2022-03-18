@@ -14,6 +14,8 @@ class BrentKung(Elaboratable):
         self.a = Signal(bits)
         self.b = Signal(bits)
         self.o = Signal(bits)
+
+        self._powered = True
         self.VPWR = Signal()
         self.VGND = Signal()
 
