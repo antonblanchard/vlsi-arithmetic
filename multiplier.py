@@ -69,7 +69,7 @@ class Multiplier(Elaboratable):
 
         if self._multiply_add:
             for i in range(self._bits*2):
-                self._partial_products[i].append(self.c[i])
+                self._partial_products[i].append(self.c_registered[i])
 
         self._acc_partial_products()
 
