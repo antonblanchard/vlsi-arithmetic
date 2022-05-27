@@ -1,2 +1,4 @@
 *.vcd
 obj_dir/
+__pycache__/
+generated/
