@@ -9,8 +9,28 @@ double sc_time_stamp()
 	return main_time;
 }
 
+void tick(Vmultiplier *m)
+{
+	m->clk = 1;
+	m->eval();
+#if VM_TRACE
+	if (tfp)
+		tfp->dump((double) main_time);
+#endif
+	main_time++;
+
+	m->clk = 0;
+	m->eval();
+#if VM_TRACE
+	if (tfp)
+		tfp->dump((double) main_time);
+#endif
+	main_time++;
+}
+
 int main(int argc, char** argv)
 {
+	int32_t pipeline[3];
 	Vmultiplier *m;
 
 	Verilated::commandArgs(argc, argv);
@@ -21,11 +41,14 @@ int main(int argc, char** argv)
 		for (unsigned long b = 0; b < 0xFFFF; b++) {
 			m->a = a;
 			m->b = b;
-        		m->eval();
-			if ((a * b) != m->o)
+			pipeline[2] = pipeline[1];
+			pipeline[1] = pipeline[0];
+			pipeline[0] = a * b;
+			tick(m);
+			if ((main_time > 6) && pipeline[2] != m->o)
 				std::cout << "ERROR: " << a << " * " << b <<
 					" got " << m->o <<
-					" expected " << a*b << std::endl;
+					" expected " << pipeline[2] << std::endl;
 		}
 	}
 
