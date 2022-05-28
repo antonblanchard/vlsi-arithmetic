@@ -99,14 +99,14 @@ class BoothRadix4(Elaboratable):
         # and a 2 bit multiplicand selector:
 
         # block sign sel  how this relates to multiplicand
-        # 000   0   00    +0
-        # 001   0   10   *+1
-        # 010   0   10   *+1
-        # 011   0   01   *+2
-        # 100   1   01   *-2
-        # 101   1   10   *-1
-        # 110   1   10   *-1
-        # 111   1   00    -0
+        # 000   0    00    +0
+        # 001   0    10   *+1
+        # 010   0    10   *+1
+        # 011   0    01   *+2
+        # 100   1    01   *-2
+        # 101   1    10   *-1
+        # 110   1    10   *-1
+        # 111   1    00    -0
 
         # sign is just the top bit
         self.m.d.comb += sign.eq(block[2])

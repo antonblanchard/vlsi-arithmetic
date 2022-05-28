@@ -78,8 +78,9 @@ class BrentKung(Elaboratable):
                 g[j] = g_new
 
         # g is the carry out signal. We need to shift it left one bit then
-        # xor it with the sum (ie p_tmp). Since we have a list of 1 bits, just
-        # insert zero at the head of of the list
+        # xor it with the sum (ie p_tmp). Since we have a list of 1 bit
+        # signals, just insert a constant zero signal at the head of of the
+        # list to shift g.
         g.insert(0, Const(0))
 
         o = Signal(self._bits)
