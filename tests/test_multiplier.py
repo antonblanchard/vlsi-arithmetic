@@ -28,6 +28,7 @@ class TestCaseSpecific(unittest.TestCase):
     ]
 
     def setUp(self):
+        print("A")
         self.bits=64
         self.dut = BoothRadix4DaddaBrentKungNone(self.bits)
 
