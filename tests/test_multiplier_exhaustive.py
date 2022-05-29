@@ -1,6 +1,5 @@
 import math
 import unittest
-import random
 from amaranth.sim import Simulator, Settle
 
 from multiplier import BoothRadix4DaddaBrentKungNone
@@ -8,7 +7,7 @@ from multiplier import BoothRadix4DaddaBrentKungNone
 
 class TestCaseExhaustive(unittest.TestCase):
     def setUp(self):
-        self.bits=8
+        self.bits = 8
         self.dut = BoothRadix4DaddaBrentKungNone(self.bits)
 
     def do_one_comb(self, a, b):

@@ -1,10 +1,9 @@
 import unittest
 import random
-
-from amaranth import Elaboratable, Module, Signal, Const
 from amaranth.sim import Simulator, Settle
 
 from adder import BrentKungNone
+
 
 class TestCaseRandom(unittest.TestCase):
     def setUp(self):
@@ -16,7 +15,7 @@ class TestCaseRandom(unittest.TestCase):
         yield self.dut.b.eq(b)
         yield Settle()
         res = (yield self.dut.o)
-        expected = (a + b) & (pow(2, self.bits)-1)
+        expected = (a + b) & (pow(2, self.bits) - 1)
         self.assertEqual(res, expected)
 
     def test_random(self):

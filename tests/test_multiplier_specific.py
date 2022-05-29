@@ -1,4 +1,3 @@
-import math
 import unittest
 import random
 from amaranth.sim import Simulator, Settle
@@ -28,7 +27,7 @@ class TestCaseSpecific(unittest.TestCase):
     ]
 
     def setUp(self):
-        self.bits=64
+        self.bits = 64
         self.dut = BoothRadix4DaddaBrentKungNone(self.bits)
 
     def do_one_comb(self, a, b):
