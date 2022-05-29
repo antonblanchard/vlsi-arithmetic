@@ -12,12 +12,13 @@ from adder import BrentKungNone, BrentKungSKY130
 
 
 class Multiplier(Elaboratable):
-    def __init__(self, bits=64, multiply_add=False, register_input=False, register_middle=False, register_output=False, powered=False):
+    def __init__(self, bits=64, multiply_add=False, register_input=False,
+                 register_middle=False, register_output=False, powered=False):
         self.a = Signal(bits)
         self.b = Signal(bits)
         if multiply_add:
-            self.c = Signal(bits*2)
-        self.o = Signal(bits*2)
+            self.c = Signal(bits * 2)
+        self.o = Signal(bits * 2)
 
         if powered:
             self._powered = True
@@ -33,23 +34,23 @@ class Multiplier(Elaboratable):
         self._register_output = register_output
 
         # partial product generation writes to this
-        self._partial_products = [[] for i in range(bits*2)]
+        self._partial_products = [[] for i in range(bits * 2)]
 
         # partial product accumulation writes to these
-        self._final_a = Signal(bits*2)
-        self._final_b = Signal(bits*2)
+        self._final_a = Signal(bits * 2)
+        self._final_b = Signal(bits * 2)
 
         # Final addition writes to this
-        self.result = Signal(bits*2)
+        self.result = Signal(bits * 2)
 
         # We optionally register inputs, outputs and in between
         # partial product accumulation and the final addition.
         self.a_registered = Signal(bits, reset_less=True)
         self.b_registered = Signal(bits, reset_less=True)
         if multiply_add:
-            self.c_registered = Signal(bits*2, reset_less=True)
-        self._final_a_registered = Signal(bits*2, reset_less=True)
-        self._final_b_registered = Signal(bits*2, reset_less=True)
+            self.c_registered = Signal(bits * 2, reset_less=True)
+        self._final_a_registered = Signal(bits * 2, reset_less=True)
+        self._final_b_registered = Signal(bits * 2, reset_less=True)
 
     def elaborate(self, platform):
         self.m = Module()
@@ -68,7 +69,7 @@ class Multiplier(Elaboratable):
         self._gen_partial_products()
 
         if self._multiply_add:
-            for i in range(self._bits*2):
+            for i in range(self._bits * 2):
                 self._partial_products[i].append(self.c_registered[i])
 
         self._acc_partial_products()
@@ -82,7 +83,7 @@ class Multiplier(Elaboratable):
 
         self._final_adder()
 
-        o2 = Signal(self._bits*2, reset_less=True)
+        o2 = Signal(self._bits * 2, reset_less=True)
         if self._register_output:
             self.m.d.sync += o2.eq(self.result)
         else:
@@ -140,10 +141,10 @@ class BoothRadix4(Elaboratable):
 
     def _gen_partial_products(self):
         # FIXME: We should avoid writing these top 2 bits
-        self._partial_products = [[] for i in range((self._bits)*2+2)]
+        self._partial_products = [[] for i in range((self._bits) * 2 + 2)]
 
-        multiplier = Signal(self._bits+3)
-        multiplicand = Signal(self._bits+2)
+        multiplier = Signal(self._bits + 3)
+        multiplicand = Signal(self._bits + 2)
 
         # Add a zero in the LSB of the multiplier and multiplicand
         self.m.d.comb += [
@@ -152,24 +153,24 @@ class BoothRadix4(Elaboratable):
         ]
 
         last_b = self._bits
-        second_last_b = self._bits-2
+        second_last_b = self._bits - 2
         last_m = self._bits
 
         # Step through the multiplier 2 bits at a time
-        for off_b in range(0, self._bits+1, 2):
+        for off_b in range(0, self._bits + 1, 2):
             # ...selecting a block of three bits at a tie
             block = Signal(3, name="booth_block%d" % off_b)
-            self.m.d.comb += block.eq(multiplier[off_b:off_b+3])
+            self.m.d.comb += block.eq(multiplier[off_b:off_b + 3])
 
             sign = Signal(name="booth_block%d_sign" % off_b)
             sel = Signal(2, name="booth_block%d_sel" % off_b)
             self._generate_booth_encoder(block, sign, sel)
 
             # Step through the multiplicand 1 bit at a time
-            for off_m in range(self._bits+1):
+            for off_m in range(self._bits + 1):
                 # ...selecting 2 bits at a time
                 mand = Signal(2, name="booth_block%d_mand%d" % (off_b, off_m))
-                self.m.d.comb += mand.eq(multiplicand[off_m:off_m+2])
+                self.m.d.comb += mand.eq(multiplicand[off_m:off_m + 2])
 
                 o = Signal(name="booth_b%d_m%d" % (off_b, off_m))
                 self._partial_products[off_b + off_m].append(o)
@@ -214,7 +215,7 @@ class Dadda(Elaboratable):
 
         while d < bits:
             out.append(d)
-            d = math.floor(1.5*d)
+            d = math.floor(1.5 * d)
 
         out.reverse()
 
@@ -254,8 +255,8 @@ class Dadda(Elaboratable):
                     # result goes in bottom of column and carry goes in the top of the next column
                     self._partial_products[offset].append(s)
                     # Put carry at bottom
-                    #self._partial_products[offset+1].insert(0, c)
-                    self._partial_products[offset+1].append(c)
+                    # self._partial_products[offset+1].insert(0, c)
+                    self._partial_products[offset + 1].append(c)
 
                     subiteration = subiteration + 1
 
@@ -277,7 +278,7 @@ class InferredAdder(Elaboratable):
 
 class BrentKungNoneAdder(Elaboratable):
     def _final_adder(self):
-        self.m.submodules.final_adder = adder = BrentKungNone(bits=self._bits*2)
+        self.m.submodules.final_adder = adder = BrentKungNone(bits=self._bits * 2)
 
         self.m.d.comb += [
             adder.a.eq(self._final_a_registered),
@@ -288,7 +289,7 @@ class BrentKungNoneAdder(Elaboratable):
 
 class BrentKungSKY130Adder(Elaboratable):
     def _final_adder(self):
-        self.m.submodules.final_adder = adder = BrentKungSKY130(bits=self._bits*2)
+        self.m.submodules.final_adder = adder = BrentKungSKY130(bits=self._bits * 2)
 
         self.m.d.comb += [
             adder.a.eq(self._final_a_registered),
@@ -323,7 +324,8 @@ if __name__ == "__main__":
                         help='Add a register stage to the input')
 
     parser.add_argument('--register-middle', action='store_true',
-                        help='Add a register stage in between partial product generation and partial product accumulation')
+                        help='Add a register stage in between partial product '
+                             'generation and partial product accumulation')
 
     parser.add_argument('--register-output', action='store_true',
                         help='Add a register stage to the output')

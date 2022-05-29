@@ -5,10 +5,10 @@ class ProcessSKY130(Elaboratable):
     def _PoweredInstance(self, *args, **kwargs):
         if self._powered:
             kwargs.update({
-                "i_VPWR" : self.VPWR,
-                "i_VPB"  : self.VPWR,
-                "i_VGND" : self.VGND,
-                "i_VNB"  : self.VGND
+                "i_VPWR": self.VPWR,
+                "i_VPB": self.VPWR,
+                "i_VGND": self.VGND,
+                "i_VNB": self.VGND
             })
         return Instance(*args, **kwargs)
 

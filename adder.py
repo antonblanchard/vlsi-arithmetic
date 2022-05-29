@@ -56,9 +56,9 @@ class BrentKung(Elaboratable):
             m.d.comb += p_tmp[i].eq(p[i])
 
         # Calculate the p and g for the odd bits
-        for i in range(1, int(math.log(self._bits, 2))+1):
-            for j in range(2**i-1, self._bits, 2**i):
-                pair = j - 2**(i-1)
+        for i in range(1, int(math.log(self._bits, 2)) + 1):
+            for j in range(2**i - 1, self._bits, 2**i):
+                pair = j - 2**(i - 1)
                 p_new = Signal()
                 g_new = Signal()
                 self._generate_and(p[j], p[pair], p_new)
@@ -68,8 +68,8 @@ class BrentKung(Elaboratable):
 
         # Calculate p and g for the even bits
         for i in range(int(math.log(self._bits, 2)), 0, -1):
-            for j in range(2**i + 2**(i-1) - 1, self._bits, 2**i):
-                pair = j - 2**(i-1)
+            for j in range(2**i + 2**(i - 1) - 1, self._bits, 2**i):
+                pair = j - 2**(i - 1)
                 p_new = Signal()
                 g_new = Signal()
                 self._generate_and(p[j], p[pair], p_new)
@@ -137,7 +137,8 @@ if __name__ == "__main__":
             print("Unknown process")
             exit(1)
 
-    adder = myadder(bits=args.bits, register_input=args.register_input, register_output=args.register_output, powered=args.powered)
+    adder = myadder(bits=args.bits, register_input=args.register_input,
+                    register_output=args.register_output, powered=args.powered)
 
     ports = [adder.a, adder.b, adder.o]
     if args.powered:
