@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 0 * * 5'
+  workflow_dispatch:
+
+jobs:
+  python:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install unittest-parallel flake8
+          python3 -m pip install git+https://github.com/amaranth-lang/amaranth.git
+
+      - name: Run python tests
+        run: |
+          unittest-parallel -v
+          #flake8
+
+  verilator:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    container: verilator/verilator:latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install git+https://github.com/amaranth-lang/amaranth.git
+
+      - name: Run verilator tests
+        run: |
+          ./ci/verilator.sh
+
+  formal:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    container: hdlc/ghdl:yosys
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install git+https://github.com/amaranth-lang/amaranth.git
+
+      - name: Run formal tests
+        run: |
+          ./ci/formal.sh

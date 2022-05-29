@@ -1,5 +1,5 @@
 read_verilog -defer gold/multiply_adder.v
-chparam -set BITS 8 gold_multiply_adder
+chparam -set BITS 4 gold_multiply_adder
 prep -flatten -top gold_multiply_adder
 splitnets -ports
 design -stash gold
