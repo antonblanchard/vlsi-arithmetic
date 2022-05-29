@@ -1,5 +1,7 @@
 #!/bin/bash -e
 
+mkdir -p generated
+
 python3 adder.py --bits=64 --process=sky130 --output=generated/adder_sky130.v
 yosys formal/adder.ys
 
