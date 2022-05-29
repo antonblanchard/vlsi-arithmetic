@@ -40,6 +40,7 @@ jobs:
           apt install -y python3-pip git
           python3 -m pip install --upgrade pip
           python3 -m pip install git+https://github.com/amaranth-lang/amaranth.git
+          python3 -m pip install amaranth-yosys
 
       - name: Run verilator tests
         run: |
