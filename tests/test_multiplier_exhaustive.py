@@ -6,9 +6,9 @@ from amaranth.sim import Simulator, Settle
 from multiplier import BoothRadix4DaddaBrentKungNone
 
 
-class TestCaseRandom(unittest.TestCase):
+class TestCaseExhaustive(unittest.TestCase):
     def setUp(self):
-        self.bits=32
+        self.bits=8
         self.dut = BoothRadix4DaddaBrentKungNone(self.bits)
 
     def do_one_comb(self, a, b):
@@ -18,16 +18,15 @@ class TestCaseRandom(unittest.TestCase):
         res = (yield self.dut.o)
         self.assertEqual(res, a * b)
 
-    def test_random(self):
+    def test_exhaustive(self):
         def bench():
-            for i in range(100):
-                rand_a = random.getrandbits(self.bits)
-                rand_b = random.getrandbits(self.bits)
-                yield from self.do_one_comb(rand_a, rand_b)
+            for a in range(int(math.pow(self.bits, 2))):
+                for b in range(int(math.pow(self.bits, 2))):
+                    yield from self.do_one_comb(a, b)
 
         sim = Simulator(self.dut)
         sim.add_process(bench)
-        with sim.write_vcd("multiplier_random.vcd"):
+        with sim.write_vcd("multiplier_exhaustive.vcd"):
             sim.run()
 
 
