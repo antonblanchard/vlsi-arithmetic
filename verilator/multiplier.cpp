@@ -11,26 +11,20 @@ double sc_time_stamp()
 
 void tick(Vmultiply_adder *m)
 {
+#if PIPELINE_DEPTH > 0
 	m->clk = 1;
 	m->eval();
-#if VM_TRACE
-	if (tfp)
-		tfp->dump((double) main_time);
-#endif
 	main_time++;
 
 	m->clk = 0;
 	m->eval();
-#if VM_TRACE
-	if (tfp)
-		tfp->dump((double) main_time);
-#endif
 	main_time++;
+#endif
 }
 
 int main(int argc, char** argv)
 {
-	int32_t pipeline[3];
+	int32_t pipeline[PIPELINE_DEPTH+1];
 	Vmultiply_adder *m;
 
 	Verilated::commandArgs(argc, argv);
@@ -43,14 +37,20 @@ int main(int argc, char** argv)
 				m->a = a;
 				m->b = b;
 				m->c = c;
-				pipeline[2] = pipeline[1];
-				pipeline[1] = pipeline[0];
+
+				m->eval();
+
+				for (unsigned long i = PIPELINE_DEPTH; i > 0; i--)
+					pipeline[i] = pipeline[i-1];
+
 				pipeline[0] = a * b + c;
-				tick(m);
-				if ((main_time > 6) && pipeline[2] != m->o)
+
+				if ((main_time > 6) && pipeline[PIPELINE_DEPTH] != m->o)
 					std::cout << "ERROR: " << a << " * " << b << " + " << c <<
 						" got " << m->o <<
 						" expected " << pipeline[2] << std::endl;
+
+				tick(m);
 			}
 		}
 	}
