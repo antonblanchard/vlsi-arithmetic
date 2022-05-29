@@ -8,11 +8,11 @@ from amaranth.back import verilog
 from process_sky130 import ProcessSKY130
 from process_none import ProcessNone
 
-from adder import BrentKungNone, BrentKungSKY130
+from adder import BrentKung, KoggeStone
 
 
 class Multiplier(Elaboratable):
-    def __init__(self, bits=64, multiply_add=False, register_input=False,
+    def __init__(self, adder, bits=64, multiply_add=False, register_input=False,
                  register_middle=False, register_output=False, powered=False):
         self.a = Signal(bits)
         self.b = Signal(bits)
@@ -27,6 +27,7 @@ class Multiplier(Elaboratable):
         else:
             self._powered = False
 
+        self._adder = adder
         self._bits = bits
         self._multiply_add = multiply_add
         self._register_input = register_input
@@ -81,7 +82,13 @@ class Multiplier(Elaboratable):
             self.m.d.comb += self._final_a_registered.eq(self._final_a)
             self.m.d.comb += self._final_b_registered.eq(self._final_b)
 
-        self._final_adder()
+        self.m.submodules.final_adder = adder = self._adder(bits=self._bits * 2)
+
+        self.m.d.comb += [
+            adder.a.eq(self._final_a_registered),
+            adder.b.eq(self._final_b_registered),
+            self.result.eq(adder.o),
+        ]
 
         o2 = Signal(self._bits * 2, reset_less=True)
         if self._register_output:
@@ -271,46 +278,6 @@ class Dadda(Elaboratable):
         self._final_b = Cat(self._partial_products[n][1] for n in range(len(self._partial_products)))
 
 
-class InferredAdder(Elaboratable):
-    def _final_adder(self):
-        self.m.d.comb += self.result.eq(self._final_a_registered + self._final_b_registered)
-
-
-class BrentKungNoneAdder(Elaboratable):
-    def _final_adder(self):
-        self.m.submodules.final_adder = adder = BrentKungNone(bits=self._bits * 2)
-
-        self.m.d.comb += [
-            adder.a.eq(self._final_a_registered),
-            adder.b.eq(self._final_b_registered),
-            self.result.eq(adder.o),
-        ]
-
-
-class BrentKungSKY130Adder(Elaboratable):
-    def _final_adder(self):
-        self.m.submodules.final_adder = adder = BrentKungSKY130(bits=self._bits * 2)
-
-        self.m.d.comb += [
-            adder.a.eq(self._final_a_registered),
-            adder.b.eq(self._final_b_registered),
-            self.result.eq(adder.o),
-        ]
-        if self._powered:
-            self.m.d.comb += [
-                adder.VPWR.eq(self.VPWR),
-                adder.VGND.eq(self.VGND),
-            ]
-
-
-class BoothRadix4DaddaBrentKungNone(Multiplier, BoothRadix4, Dadda, ProcessNone, BrentKungNoneAdder):
-    pass
-
-
-class BoothRadix4DaddaBrentKungSKY130(Multiplier, BoothRadix4, Dadda, ProcessSKY130, BrentKungSKY130Adder):
-    pass
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Create Verilog Multiplier')
 
@@ -336,20 +303,39 @@ if __name__ == "__main__":
     parser.add_argument('--process',
                         help='What process to build for, eg sky130')
 
+    parser.add_argument('--algorithm',
+                        help='Adder algorithm (brentkung (default), koggestone)')
+
     parser.add_argument('--output', type=argparse.FileType('w'), default=sys.stdout,
                         help='Write output to this file')
 
     args = parser.parse_args()
 
-    mymultiplier = BoothRadix4DaddaBrentKungNone
+    process = ProcessNone
     if args.process:
         if args.process == 'sky130':
-            mymultiplier = BoothRadix4DaddaBrentKungSKY130
+            process = ProcessSKY130
         else:
             print("Unknown process")
             exit(1)
 
-    multiplier = mymultiplier(bits=args.bits, multiply_add=args.multiply_add,
+    algorithm = BrentKung
+    if args.algorithm:
+        if args.algorithm.lower() == 'brentkung':
+            algorithm = BrentKung
+        elif args.algorithm.lower() == 'koggestone':
+            algorithm = KoggeStone
+        else:
+            print("Unknown algorithm")
+            exit(1)
+
+    class mymultiplier(Multiplier, BoothRadix4, Dadda, process):
+        pass
+
+    class myadder(algorithm, process):
+        pass
+
+    multiplier = mymultiplier(bits=args.bits, adder=myadder, multiply_add=args.multiply_add,
                               register_input=args.register_input,
                               register_middle=args.register_middle,
                               register_output=args.register_output,

@@ -2,13 +2,23 @@ import math
 import unittest
 from amaranth.sim import Simulator, Settle
 
-from multiplier import BoothRadix4DaddaBrentKungNone
+from adder import BrentKung
+from multiplier import Multiplier, BoothRadix4, Dadda
+from process_none import ProcessNone
+
+
+class TestAdder(BrentKung, ProcessNone):
+    pass
+
+
+class TestMultiplier(Multiplier, BoothRadix4, Dadda, ProcessNone):
+    pass
 
 
 class TestCaseExhaustive(unittest.TestCase):
     def setUp(self):
         self.bits = 8
-        self.dut = BoothRadix4DaddaBrentKungNone(self.bits)
+        self.dut = TestMultiplier(adder=TestAdder, bits=self.bits)
 
     def do_one_comb(self, a, b):
         yield self.dut.a.eq(a)

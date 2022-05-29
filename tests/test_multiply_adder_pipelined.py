@@ -2,15 +2,25 @@ import unittest
 import random
 from amaranth.sim import Simulator
 
-from multiplier import BoothRadix4DaddaBrentKungNone
+from adder import BrentKung
+from multiplier import Multiplier, BoothRadix4, Dadda
+from process_none import ProcessNone
+
+
+class TestAdder(BrentKung, ProcessNone):
+    pass
+
+
+class TestMultiplier(Multiplier, BoothRadix4, Dadda, ProcessNone):
+    pass
 
 
 class TestCasePipelined(unittest.TestCase):
     def setUp(self):
         self.bits = 64
-        self.dut = BoothRadix4DaddaBrentKungNone(bits=self.bits, multiply_add=True,
-                                                 register_input=True, register_middle=True,
-                                                 register_output=True)
+        self.dut = TestMultiplier(adder=TestAdder, bits=self.bits, multiply_add=True,
+                                  register_input=True, register_middle=True,
+                                  register_output=True)
 
     def do_one_sync(self, a, b, c, cycles=3):
         yield self.dut.a.eq(a)

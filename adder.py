@@ -98,14 +98,6 @@ class BrentKung(Elaboratable):
         return m
 
 
-class BrentKungNone(BrentKung, ProcessNone):
-    pass
-
-
-class BrentKungSKY130(BrentKung, ProcessSKY130):
-    pass
-
-
 class KoggeStone(Elaboratable):
     def __init__(self, bits=64, register_input=False, register_output=False, powered=False):
         self.a = Signal(bits)
@@ -154,7 +146,7 @@ class KoggeStone(Elaboratable):
 
         # Calculate p and g
         for i in range(0, int(math.log(self._bits, 2))):
-            for j in range(self._bits-2**i):
+            for j in range(self._bits - 2**i):
                 pair = j + 2**i
                 p_new = Signal()
                 g_new = Signal()
@@ -183,11 +175,44 @@ class KoggeStone(Elaboratable):
         m.d.comb += self.o.eq(o2)
         return m
 
-class KoggeStoneNone(KoggeStone, ProcessNone):
-    pass
 
-class KoggeStoneSKY130(KoggeStone, ProcessSKY130):
-    pass
+class Inferred(Elaboratable):
+    def __init__(self, bits=64, register_input=False, register_output=False, powered=False):
+        self.a = Signal(bits)
+        self.b = Signal(bits)
+        self.o = Signal(bits)
+
+        self._bits = bits
+        self._register_input = register_input
+        self._register_output = register_output
+
+    def elaborate(self, platform):
+        self.m = m = Module()
+
+        a = Signal(self._bits, reset_less=True)
+        b = Signal(self._bits, reset_less=True)
+        if self._register_input:
+            m.d.sync += [
+                a.eq(self.a),
+                b.eq(self.b),
+            ]
+        else:
+            m.d.comb += [
+                a.eq(self.a),
+                b.eq(self.b),
+            ]
+
+        o = Signal(self._bits)
+        self.m.d.comb += o.eq(self.a + self.b)
+
+        o2 = Signal(self._bits, reset_less=True)
+        if self._register_output:
+            m.d.sync += o2.eq(o)
+        else:
+            m.d.comb += o2.eq(o)
+
+        m.d.comb += self.o.eq(o2)
+        return m
 
 
 if __name__ == "__main__":
@@ -205,6 +230,9 @@ if __name__ == "__main__":
     parser.add_argument('--process',
                         help='What process to build for, eg sky130')
 
+    parser.add_argument('--algorithm',
+                        help='Adder algorithm (brentkung (default), koggestone, inferred)')
+
     parser.add_argument('--powered', action='store_true',
                         help='Add power pins (VPWR/VGND)')
 
@@ -213,13 +241,28 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    myadder = BrentKungNone
+    process = ProcessNone
     if args.process:
         if args.process == 'sky130':
-            myadder = BrentKungSKY130
+            process = ProcessSKY130
         else:
             print("Unknown process")
             exit(1)
+
+    algorithm = BrentKung
+    if args.algorithm:
+        if args.algorithm.lower() == 'brentkung':
+            algorithm = BrentKung
+        elif args.algorithm.lower() == 'koggestone':
+            algorithm = KoggeStone
+        elif args.algorithm.lower() == 'inferred':
+            algorithm = Inferred
+        else:
+            print("Unknown algorithm")
+            exit(1)
+
+    class myadder(process, algorithm):
+        pass
 
     adder = myadder(bits=args.bits, register_input=args.register_input,
                     register_output=args.register_output, powered=args.powered)
