@@ -106,6 +106,90 @@ class BrentKungSKY130(BrentKung, ProcessSKY130):
     pass
 
 
+class KoggeStone(Elaboratable):
+    def __init__(self, bits=64, register_input=False, register_output=False, powered=False):
+        self.a = Signal(bits)
+        self.b = Signal(bits)
+        self.o = Signal(bits)
+
+        if powered:
+            self._powered = True
+            self.VPWR = Signal()
+            self.VGND = Signal()
+        else:
+            self._powered = False
+
+        self._bits = bits
+        self._register_input = register_input
+        self._register_output = register_output
+
+    def elaborate(self, platform):
+        self.m = m = Module()
+
+        a = Signal(self._bits, reset_less=True)
+        b = Signal(self._bits, reset_less=True)
+        if self._register_input:
+            m.d.sync += [
+                a.eq(self.a),
+                b.eq(self.b),
+            ]
+        else:
+            m.d.comb += [
+                a.eq(self.a),
+                b.eq(self.b),
+            ]
+
+        # Use arrays of 1 bit signals to make it easy to create
+        # trees of p and g updates.
+        p = [Signal() for i in range(self._bits)]
+        g = [Signal() for i in range(self._bits)]
+
+        for i in range(self._bits):
+            self._generate_half_adder(a[i], b[i], p[i], g[i])
+
+        # We need a copy of p
+        p_tmp = [Signal() for i in range(self._bits)]
+        for i in range(self._bits):
+            m.d.comb += p_tmp[i].eq(p[i])
+
+        # Calculate p and g
+        for i in range(0, int(math.log(self._bits, 2))):
+            for j in range(self._bits-2**i):
+                pair = j + 2**i
+                p_new = Signal()
+                g_new = Signal()
+                self._generate_and(p[j], p[pair], p_new)
+                self._generate_and21_or2(p[pair], g[j], g[pair], g_new)
+                p[pair] = p_new
+                g[pair] = g_new
+
+        # g is the carry out signal. We need to shift it left one bit then
+        # xor it with the sum (ie p_tmp). Since we have a list of 1 bit
+        # signals, just insert a constant zero signal at the head of of the
+        # list to shift g.
+        g.insert(0, Const(0))
+
+        o = Signal(self._bits)
+        for i in range(self._bits):
+            # This also flattens the list of bits when writing to o
+            self._generate_xor(p_tmp[i], g[i], o[i])
+
+        o2 = Signal(self._bits, reset_less=True)
+        if self._register_output:
+            m.d.sync += o2.eq(o)
+        else:
+            m.d.comb += o2.eq(o)
+
+        m.d.comb += self.o.eq(o2)
+        return m
+
+class KoggeStoneNone(KoggeStone, ProcessNone):
+    pass
+
+class KoggeStoneSKY130(KoggeStone, ProcessSKY130):
+    pass
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Create Verilog Adder')
 
