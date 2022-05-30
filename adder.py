@@ -145,15 +145,17 @@ class KoggeStone(Elaboratable):
             m.d.comb += p_tmp[i].eq(p[i])
 
         # Calculate p and g
-        for i in range(0, int(math.log(self._bits, 2))):
-            for j in range(self._bits - 2**i):
-                pair = j + 2**i
+        for level in range(0, int(math.log(self._bits, 2))):
+            # Iterate backwards, because we want p and g from the previous iteration
+            # and we update them as we go in this loop
+            for bit_from in range(self._bits - 2**level-1, -1, -1):
+                bit_to = bit_from + 2**level
                 p_new = Signal()
                 g_new = Signal()
-                self._generate_and(p[j], p[pair], p_new)
-                self._generate_and21_or2(p[pair], g[j], g[pair], g_new)
-                p[pair] = p_new
-                g[pair] = g_new
+                self._generate_and(p[bit_from], p[bit_to], p_new)
+                self._generate_and21_or2(p[bit_to], g[bit_from], g[bit_to], g_new)
+                p[bit_to] = p_new
+                g[bit_to] = g_new
 
         # g is the carry out signal. We need to shift it left one bit then
         # xor it with the sum (ie p_tmp). Since we have a list of 1 bit
