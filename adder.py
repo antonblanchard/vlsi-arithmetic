@@ -56,26 +56,26 @@ class BrentKung(Elaboratable):
             m.d.comb += p_tmp[i].eq(p[i])
 
         # Calculate the p and g for the odd bits
-        for i in range(1, int(math.log(self._bits, 2)) + 1):
-            for j in range(2**i - 1, self._bits, 2**i):
-                pair = j - 2**(i - 1)
+        for level in range(1, int(math.log(self._bits, 2)) + 1):
+            for bit_to in range(2**level - 1, self._bits, 2**level):
+                bit_from = bit_to - 2**(level - 1)
                 p_new = Signal()
                 g_new = Signal()
-                self._generate_and(p[j], p[pair], p_new)
-                self._generate_and21_or2(p[j], g[pair], g[j], g_new)
-                p[j] = p_new
-                g[j] = g_new
+                self._generate_and(p[bit_to], p[bit_from], p_new)
+                self._generate_and21_or2(p[bit_to], g[bit_from], g[bit_to], g_new)
+                p[bit_to] = p_new
+                g[bit_to] = g_new
 
         # Calculate p and g for the even bits
-        for i in range(int(math.log(self._bits, 2)), 0, -1):
-            for j in range(2**i + 2**(i - 1) - 1, self._bits, 2**i):
-                pair = j - 2**(i - 1)
+        for level in range(int(math.log(self._bits, 2)), 0, -1):
+            for bit_to in range(2**level + 2**(level - 1) - 1, self._bits, 2**level):
+                bit_from = bit_to - 2**(level - 1)
                 p_new = Signal()
                 g_new = Signal()
-                self._generate_and(p[j], p[pair], p_new)
-                self._generate_and21_or2(p[j], g[pair], g[j], g_new)
-                p[j] = p_new
-                g[j] = g_new
+                self._generate_and(p[bit_to], p[bit_from], p_new)
+                self._generate_and21_or2(p[bit_to], g[bit_from], g[bit_to], g_new)
+                p[bit_to] = p_new
+                g[bit_to] = g_new
 
         # g is the carry out signal. We need to shift it left one bit then
         # xor it with the sum (ie p_tmp). Since we have a list of 1 bit
