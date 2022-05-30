@@ -148,7 +148,7 @@ class KoggeStone(Elaboratable):
         for level in range(0, int(math.log(self._bits, 2))):
             # Iterate backwards, because we want p and g from the previous iteration
             # and we update them as we go in this loop
-            for bit_from in range(self._bits - 2**level-1, -1, -1):
+            for bit_from in range(self._bits - 2**level - 1, -1, -1):
                 bit_to = bit_from + 2**level
                 p_new = Signal()
                 g_new = Signal()
