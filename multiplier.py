@@ -41,9 +41,6 @@ class Multiplier(Elaboratable):
         self._final_a = Signal(bits * 2)
         self._final_b = Signal(bits * 2)
 
-        # Final addition writes to this
-        self.result = Signal(bits * 2)
-
         # We optionally register inputs, outputs and in between
         # partial product accumulation and the final addition.
         self.a_registered = Signal(bits, reset_less=True)
@@ -82,21 +79,21 @@ class Multiplier(Elaboratable):
             self.m.d.comb += self._final_a_registered.eq(self._final_a)
             self.m.d.comb += self._final_b_registered.eq(self._final_b)
 
+        result = Signal(self._bits * 2)
         self.m.submodules.final_adder = adder = self._adder(bits=self._bits * 2)
-
         self.m.d.comb += [
             adder.a.eq(self._final_a_registered),
             adder.b.eq(self._final_b_registered),
-            self.result.eq(adder.o),
+            result.eq(adder.o),
         ]
 
-        o2 = Signal(self._bits * 2, reset_less=True)
+        result_registered = Signal(self._bits * 2, reset_less=True)
         if self._register_output:
-            self.m.d.sync += o2.eq(self.result)
+            self.m.d.sync += result_registered.eq(result)
         else:
-            self.m.d.comb += o2.eq(self.result)
+            self.m.d.comb += result_registered.eq(result)
 
-        self.m.d.comb += self.o.eq(o2)
+        self.m.d.comb += self.o.eq(result_registered)
 
         return self.m
 
