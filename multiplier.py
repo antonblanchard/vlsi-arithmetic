@@ -34,21 +34,20 @@ class Multiplier(Elaboratable):
         self._register_middle = register_middle
         self._register_output = register_output
 
-        # partial product generation writes to this
+        # Optionally register inputs. Partial product generation
+        # reads from these
+        self.a_registered = Signal(bits, reset_less=True)
+        self.b_registered = Signal(bits, reset_less=True)
+        if multiply_add:
+            self.c_registered = Signal(bits * 2, reset_less=True)
+
+        # partial product generation writes to this and partial product
+        # accumulation reads from this
         self._partial_products = [[] for i in range(bits * 2)]
 
         # partial product accumulation writes to these
         self._final_a = Signal(bits * 2)
         self._final_b = Signal(bits * 2)
-
-        # We optionally register inputs, outputs and in between
-        # partial product accumulation and the final addition.
-        self.a_registered = Signal(bits, reset_less=True)
-        self.b_registered = Signal(bits, reset_less=True)
-        if multiply_add:
-            self.c_registered = Signal(bits * 2, reset_less=True)
-        self._final_a_registered = Signal(bits * 2, reset_less=True)
-        self._final_b_registered = Signal(bits * 2, reset_less=True)
 
     def elaborate(self, platform):
         self.m = Module()
@@ -72,21 +71,27 @@ class Multiplier(Elaboratable):
 
         self._acc_partial_products()
 
+        # Optionally register between partial product accumulation and
+        # final addition.
+        final_a_registered = Signal(self._bits * 2, reset_less=True)
+        final_b_registered = Signal(self._bits * 2, reset_less=True)
         if self._register_middle:
-            self.m.d.sync += self._final_a_registered.eq(self._final_a)
-            self.m.d.sync += self._final_b_registered.eq(self._final_b)
+            self.m.d.sync += final_a_registered.eq(self._final_a)
+            self.m.d.sync += final_b_registered.eq(self._final_b)
         else:
-            self.m.d.comb += self._final_a_registered.eq(self._final_a)
-            self.m.d.comb += self._final_b_registered.eq(self._final_b)
+            self.m.d.comb += final_a_registered.eq(self._final_a)
+            self.m.d.comb += final_b_registered.eq(self._final_b)
 
+        # Final addition
         result = Signal(self._bits * 2)
         self.m.submodules.final_adder = adder = self._adder(bits=self._bits * 2)
         self.m.d.comb += [
-            adder.a.eq(self._final_a_registered),
-            adder.b.eq(self._final_b_registered),
+            adder.a.eq(final_a_registered),
+            adder.b.eq(final_b_registered),
             result.eq(adder.o),
         ]
 
+        # Optionally register output
         result_registered = Signal(self._bits * 2, reset_less=True)
         if self._register_output:
             self.m.d.sync += result_registered.eq(result)
