@@ -242,7 +242,7 @@ class HanCarlson(Elaboratable):
                 g[bit_to] = g_new
 
         # Now do the even bits, again working backwards
-        for bit_from in range(self._bits-3, 0, -2):
+        for bit_from in range(self._bits - 3, 0, -2):
             bit_to = bit_from + 1
             p_new = Signal()
             g_new = Signal()
