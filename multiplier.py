@@ -52,6 +52,7 @@ class Multiplier(Elaboratable):
     def elaborate(self, platform):
         self.m = Module()
 
+        # Optionally register input
         if self._register_input:
             self.m.d.sync += self.a_registered.eq(self.a)
             self.m.d.sync += self.b_registered.eq(self.b)
