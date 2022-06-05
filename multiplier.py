@@ -8,7 +8,7 @@ from amaranth.back import verilog
 from process_sky130 import ProcessSKY130
 from process_none import ProcessNone
 
-from adder import BrentKung, KoggeStone, Inferred
+from adder import BrentKung, KoggeStone, HanCarlson, Inferred
 
 
 class Multiplier(Elaboratable):
@@ -307,7 +307,7 @@ if __name__ == "__main__":
                         help='What process to build for, eg sky130')
 
     parser.add_argument('--algorithm',
-                        help='Adder algorithm (brentkung (default), koggestone, inferred)')
+                        help='Adder algorithm (brentkung (default), koggestone, hancarlson, inferred)')
 
     parser.add_argument('--output', type=argparse.FileType('w'), default=sys.stdout,
                         help='Write output to this file')
@@ -328,6 +328,8 @@ if __name__ == "__main__":
             algorithm = BrentKung
         elif args.algorithm.lower() == 'koggestone':
             algorithm = KoggeStone
+        elif args.algorithm.lower() == 'hancarlson':
+            algorithm = HanCarlson
         elif args.algorithm.lower() == 'inferred':
             algorithm = Inferred
         else:

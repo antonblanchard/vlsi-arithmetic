@@ -8,6 +8,9 @@ yosys formal/adder.ys
 python3 adder.py --bits=64 --algorithm=koggestone --process=sky130 --output=generated/adder_sky130.v
 yosys formal/adder.ys
 
+python3 adder.py --bits=64 --algorithm=hancarlson --process=sky130 --output=generated/adder_sky130.v
+yosys formal/adder.ys
+
 python3 multiplier.py --bits=8 --process=sky130 --output=generated/multiplier_sky130.v
 yosys formal/multiplier.ys
 
