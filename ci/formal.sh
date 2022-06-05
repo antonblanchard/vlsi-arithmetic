@@ -20,6 +20,9 @@ yosys formal/multiply_adder.ys
 python3 multiplier.py --bits=4 --multiply-add --algorithm=koggestone --process=sky130 --output=generated/multiply_adder_sky130.v
 yosys formal/multiply_adder.ys
 
+python3 multiplier.py --bits=4 --multiply-add --algorithm=hancarlson --process=sky130 --output=generated/multiply_adder_sky130.v
+yosys formal/multiply_adder.ys
+
 python3 multiplier.py --bits=4 --multiply-add --process=sky130 --register-input --register-middle --register-output --output=generated/multiply_adder_pipelined_sky130.v
 yosys formal/multiply_adder_pipelined.ys
 
@@ -27,4 +30,7 @@ python3 multiplier.py --bits=4 --multiply-add --algorithm=brentkung --process=sk
 yosys formal/multiply_adder_pipelined.ys
 
 python3 multiplier.py --bits=4 --multiply-add --algorithm=koggestone --process=sky130 --register-input --register-middle --register-output --output=generated/multiply_adder_pipelined_sky130.v
+yosys formal/multiply_adder_pipelined.ys
+
+python3 multiplier.py --bits=4 --multiply-add --algorithm=hancarlson --process=sky130 --register-input --register-middle --register-output --output=generated/multiply_adder_pipelined_sky130.v
 yosys formal/multiply_adder_pipelined.ys
