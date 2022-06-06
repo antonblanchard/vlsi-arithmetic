@@ -150,8 +150,8 @@ class BoothRadix4(Elaboratable):
         self._generate_xor(t, sign, o)
 
     def _gen_partial_products(self):
-        # FIXME: We should avoid writing these top 2 bits
-        self._partial_products = [[] for i in range((self._bits) * 2 + 2)]
+        # We write one bit above the final product but never use it
+        self._partial_products = [[] for i in range((self._bits) * 2 + 1)]
 
         multiplier = Signal(self._bits + 3)
         multiplicand = Signal(self._bits + 2)
@@ -187,25 +187,23 @@ class BoothRadix4(Elaboratable):
 
                 self._generate_booth_mux(mand, sel, sign, o)
 
+                # Add sign to bit to lowest bit of row (ignoring last row)
+                if off_m == 0 and off_b != last_b:
+                    self._partial_products[off_b].append(sign)
+
                 if off_m == last_m:
                     notsign = Signal()
                     self._generate_inv(sign, notsign)
 
                     if off_b == 0:
-                        # Add (notsign, sign, sign) to top bits
+                        # Add (notsign, sign, sign) to top bits of first row
                         self._partial_products[off_b + off_m + 1].append(sign)
                         self._partial_products[off_b + off_m + 2].append(sign)
                         self._partial_products[off_b + off_m + 3].append(notsign)
-                    elif off_b == second_last_b:
-                        self._partial_products[off_b + off_m + 1].append(notsign)
                     elif off_b != last_b:
-                        # Add (1, notsign) to top bits
+                        # Add (1, notsign) to top bits of all rows except first and last
                         self._partial_products[off_b + off_m + 1].append(notsign)
                         self._partial_products[off_b + off_m + 2].append(Const(1))
-
-                    if off_b != last_b:
-                        # Add sign to lowest bit in block
-                        self._partial_products[off_b].append(sign)
 
 
 class LongMultiplication(Elaboratable):
@@ -265,7 +263,9 @@ class Dadda(Elaboratable):
                     # result goes in the bottom of current column and carry goes in the bottom
                     # of the next column
                     self._partial_products[offset].append(s)
-                    self._partial_products[offset + 1].append(c)
+                    # Ignore the carry out of the top bit
+                    if (offset + 1) <= (self._bits * 2):
+                        self._partial_products[offset + 1].append(c)
 
                     subiteration = subiteration + 1
 
