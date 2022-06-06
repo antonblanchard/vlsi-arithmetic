@@ -163,7 +163,6 @@ class BoothRadix4(Elaboratable):
         ]
 
         last_b = self._bits
-        second_last_b = self._bits - 2
         last_m = self._bits
 
         # Step through the multiplier 2 bits at a time
