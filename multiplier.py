@@ -262,10 +262,9 @@ class Dadda(Elaboratable):
                         name = "dadda_ha_%d_%d_%d" % (iteration, offset, subiteration)
                         self._generate_half_adder(i0, i1, s, c, name)
 
-                    # result goes in bottom of column and carry goes in the top of the next column
+                    # result goes in the bottom of current column and carry goes in the bottom
+                    # of the next column
                     self._partial_products[offset].append(s)
-                    # Put carry at bottom
-                    # self._partial_products[offset+1].insert(0, c)
                     self._partial_products[offset + 1].append(c)
 
                     subiteration = subiteration + 1
