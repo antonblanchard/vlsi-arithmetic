@@ -138,11 +138,8 @@ class HanCarlson(AdderFramework):
         # Now do the even bits, again working backwards
         for bit_from in range(self._bits - 3, 0, -2):
             bit_to = bit_from + 1
-            p_new = Signal()
             g_new = Signal()
-            self._generate_and(self._p[bit_from], self._p[bit_to], p_new)
             self._generate_and21_or2(self._p[bit_to], self._g[bit_from], self._g[bit_to], g_new)
-            self._p[bit_to] = p_new
             self._g[bit_to] = g_new
 
 
