@@ -91,15 +91,12 @@ class BrentKung(AdderFramework):
                 self._p[bit_to] = p_new
                 self._g[bit_to] = g_new
 
-        # Calculate p and g for the even bits
+        # Calculate g for the even bits
         for level in range(int(math.log(self._bits, 2)), 0, -1):
             for bit_to in range(2**level + 2**(level - 1) - 1, self._bits, 2**level):
                 bit_from = bit_to - 2**(level - 1)
-                p_new = Signal()
                 g_new = Signal()
-                self._generate_and(self._p[bit_to], self._p[bit_from], p_new)
                 self._generate_and21_or2(self._p[bit_to], self._g[bit_from], self._g[bit_to], g_new)
-                self._p[bit_to] = p_new
                 self._g[bit_to] = g_new
 
 
