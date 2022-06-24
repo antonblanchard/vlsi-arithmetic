@@ -6,6 +6,7 @@ from amaranth import Elaboratable, Module, Signal, Const
 from amaranth.back import verilog
 
 from process_sky130 import ProcessSKY130
+from process_asap7 import ProcessASAP7
 from process_none import ProcessNone
 
 
@@ -195,7 +196,7 @@ if __name__ == "__main__":
                         help='Add a register stage to the output')
 
     parser.add_argument('--process',
-                        help='What process to build for, eg sky130')
+                        help='What process to build for, (none (default), sky130, asap7)')
 
     parser.add_argument('--algorithm',
                         help='Adder algorithm (brentkung (default), koggestone, hancarlson, inferred)')
@@ -210,8 +211,12 @@ if __name__ == "__main__":
 
     process = ProcessNone
     if args.process:
-        if args.process == 'sky130':
+        if args.process == 'none':
+            process = ProcessNone
+        elif args.process == 'sky130':
             process = ProcessSKY130
+        elif args.process == 'asap7':
+            process = ProcessASAP7
         else:
             print("Unknown process")
             exit(1)
