@@ -45,10 +45,10 @@ int main(int argc, char** argv)
 
 				pipeline[0] = a * b + c;
 
-				if ((main_time > 6) && pipeline[PIPELINE_DEPTH] != m->o)
+				if ((!PIPELINE_DEPTH || (main_time > 6)) && (pipeline[PIPELINE_DEPTH] != m->o))
 					std::cout << "ERROR: " << a << " * " << b << " + " << c <<
 						" got " << m->o <<
-						" expected " << pipeline[2] << std::endl;
+						" expected " << pipeline[PIPELINE_DEPTH] << std::endl;
 
 				tick(m);
 			}
