@@ -2,35 +2,41 @@
 
 mkdir -p generated
 
-python3 adder.py --bits=64 --algorithm=brentkung --process=sky130 --output=generated/adder_sky130.v
-yosys formal/adder.ys
+PROCESSES="sky130hd asap7"
+ADDERS="brentkung koggestone hancarlson"
 
-python3 adder.py --bits=64 --algorithm=koggestone --process=sky130 --output=generated/adder_sky130.v
-yosys formal/adder.ys
+# Test adders
+for PROCESS in ${PROCESSES}; do
+	for ADDER in ${ADDERS}; do
+		VERILOG=generated/adder_${PROCESS}_${ADDER}.v
+		python3 adder.py --bits=64 --algorithm=${ADDER} --process=${PROCESS} --output=${VERILOG}
+		BITS=64 VERILOG=${VERILOG} PROCESS_VERILOG=${PROCESS}/${PROCESS}.v yosys -c formal/adder.tcl
+	done
+done
 
-python3 adder.py --bits=64 --algorithm=hancarlson --process=sky130 --output=generated/adder_sky130.v
-yosys formal/adder.ys
+# Test multipliers
+for PROCESS in ${PROCESSES}; do
+	for ADDER in ${ADDERS}; do
+		VERILOG=generated/multiplier_${PROCESS}_${ADDER}.v
+		python3 multiplier.py --bits=8 --algorithm=${ADDER} --process=${PROCESS} --output=${VERILOG}
+		BITS=8 VERILOG=${VERILOG} PROCESS_VERILOG=${PROCESS}/${PROCESS}.v yosys -c formal/multiplier.tcl
+	done
+done
 
-python3 multiplier.py --bits=8 --process=sky130 --output=generated/multiplier_sky130.v
-yosys formal/multiplier.ys
+# Test multiply adders
+for PROCESS in ${PROCESSES}; do
+	for ADDER in ${ADDERS}; do
+		VERILOG=generated/multiply_adder_${PROCESS}_${ADDER}.v
+		python3 multiplier.py --bits=4 --multiply-add --algorithm=${ADDER} --process=${PROCESS} --output=${VERILOG}
+		BITS=4 VERILOG=${VERILOG} PROCESS_VERILOG=${PROCESS}/${PROCESS}.v yosys -c formal/multiply_adder.tcl
+	done
+done
 
-python3 multiplier.py --bits=4 --multiply-add --algorithm=brentkung --process=sky130 --output=generated/multiply_adder_sky130.v
-yosys formal/multiply_adder.ys
-
-python3 multiplier.py --bits=4 --multiply-add --algorithm=koggestone --process=sky130 --output=generated/multiply_adder_sky130.v
-yosys formal/multiply_adder.ys
-
-python3 multiplier.py --bits=4 --multiply-add --algorithm=hancarlson --process=sky130 --output=generated/multiply_adder_sky130.v
-yosys formal/multiply_adder.ys
-
-python3 multiplier.py --bits=4 --multiply-add --process=sky130 --register-input --register-middle --register-output --output=generated/multiply_adder_pipelined_sky130.v
-yosys formal/multiply_adder_pipelined.ys
-
-python3 multiplier.py --bits=4 --multiply-add --algorithm=brentkung --process=sky130 --register-input --register-middle --register-output --output=generated/multiply_adder_pipelined_sky130.v
-yosys formal/multiply_adder_pipelined.ys
-
-python3 multiplier.py --bits=4 --multiply-add --algorithm=koggestone --process=sky130 --register-input --register-middle --register-output --output=generated/multiply_adder_pipelined_sky130.v
-yosys formal/multiply_adder_pipelined.ys
-
-python3 multiplier.py --bits=4 --multiply-add --algorithm=hancarlson --process=sky130 --register-input --register-middle --register-output --output=generated/multiply_adder_pipelined_sky130.v
-yosys formal/multiply_adder_pipelined.ys
+# Test multiply adder with pipelining
+for PROCESS in ${PROCESSES}; do
+	for ADDER in ${ADDERS}; do
+		VERILOG=generated/multiply_adder_${PROCESS}_${ADDER}.v
+		python3 multiplier.py --bits=4 --multiply-add --algorithm=${ADDER} --process=${PROCESS} --register-input --register-middle --register-output --output=${VERILOG}
+		BITS=4 VERILOG=${VERILOG} PROCESS_VERILOG=${PROCESS}/${PROCESS}.v yosys -c formal/multiply_adder_pipelined.tcl
+	done
+done

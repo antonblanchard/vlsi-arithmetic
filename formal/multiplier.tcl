@@ -1,10 +1,12 @@
+yosys -import
+
 read_verilog -defer gold/multiplier.v
-chparam -set BITS 8 gold_multiplier
+chparam -set BITS $::env(BITS) gold_multiplier
 prep -flatten -top gold_multiplier
 splitnets -ports
 design -stash gold
 
-read_verilog generated/multiplier_sky130.v sky130/sky130_fd_sc_hd_cutdown.v
+read_verilog $::env(VERILOG) $::env(PROCESS_VERILOG)
 prep -flatten -top multiplier
 splitnets -ports
 design -stash gate
