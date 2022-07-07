@@ -2,19 +2,19 @@ import unittest
 import random
 from amaranth.sim import Simulator, Settle
 
-from process_none import ProcessNone
+from none.process import NoneProcess
 from adder import BrentKung, KoggeStone, HanCarlson
 
 
-class TestBrentKungAdder(BrentKung, ProcessNone):
+class TestBrentKungAdder(BrentKung, NoneProcess):
     pass
 
 
-class TestKoggeStoneAdder(KoggeStone, ProcessNone):
+class TestKoggeStoneAdder(KoggeStone, NoneProcess):
     pass
 
 
-class TestHanCarlsonAdder(HanCarlson, ProcessNone):
+class TestHanCarlsonAdder(HanCarlson, NoneProcess):
     pass
 
 

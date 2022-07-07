@@ -4,14 +4,14 @@ from amaranth.sim import Simulator
 
 from adder import BrentKung
 from multiplier import Multiplier, BoothRadix4, Dadda
-from process_none import ProcessNone
+from none.process import NoneProcess
 
 
-class TestAdder(BrentKung, ProcessNone):
+class TestAdder(BrentKung, NoneProcess):
     pass
 
 
-class TestMultiplier(Multiplier, BoothRadix4, Dadda, ProcessNone):
+class TestMultiplier(Multiplier, BoothRadix4, Dadda, NoneProcess):
     pass
 
 
