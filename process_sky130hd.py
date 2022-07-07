@@ -1,7 +1,7 @@
 from amaranth import Elaboratable, Instance
 
 
-class ProcessSKY130(Elaboratable):
+class ProcessSKY130HD(Elaboratable):
     def _PoweredInstance(self, *args, **kwargs):
         if self._powered:
             kwargs.update({

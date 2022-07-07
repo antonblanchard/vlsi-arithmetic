@@ -1,35 +1,47 @@
 #!/bin/bash -e
 
+VERILATOR_OPTS="-O3 -Wno-fatal -Wno-TIMESCALEMOD"
+PROCESSES="sky130hd asap7"
+ADDERS="brentkung koggestone hancarlson"
+
 mkdir -p generated
 
-python3 multiplier.py --bits=8 --algorithm=brentkung --multiply-add --process=sky130 --output=generated/multiplier_sky130_16.v
-verilator -O3 -Wno-fatal -Wno-TIMESCALEMOD -CFLAGS "-O3 -DPIPELINE_DEPTH=0" --assert --cc --exe --build generated/multiplier_sky130_16.v sky130/sky130_fd_sc_hd_cutdown.v verilator/multiplier.cpp -o multiplier-verilator -top-module multiply_adder
-obj_dir/multiplier-verilator
+TESTS=""
 
-python3 multiplier.py --bits=8 --algorithm=koggestone --multiply-add --process=sky130 --register-input --output=generated/multiplier_sky130_16.v
-verilator -O3 -Wno-fatal -Wno-TIMESCALEMOD -CFLAGS "-O3 -DPIPELINE_DEPTH=1" --assert --cc --exe --build generated/multiplier_sky130_16.v sky130/sky130_fd_sc_hd_cutdown.v verilator/multiplier.cpp -o multiplier-verilator -top-module multiply_adder
-obj_dir/multiplier-verilator
+build_one_test () {
+	PIPELINE_DEPTH="$1"
+	shift
+	ARGS="$*"
 
-python3 multiplier.py --bits=8 --algorithm=hancarlson --multiply-add --process=sky130 --register-middle --output=generated/multiplier_sky130_16.v
-verilator -O3 -Wno-fatal -Wno-TIMESCALEMOD -CFLAGS "-O3 -DPIPELINE_DEPTH=1" --assert --cc --exe --build generated/multiplier_sky130_16.v sky130/sky130_fd_sc_hd_cutdown.v verilator/multiplier.cpp -o multiplier-verilator -top-module multiply_adder
-obj_dir/multiplier-verilator
+	# Exhaustive test of 8 bit multiply/adder for every process and adder type
+	for PROCESS in ${PROCESSES}; do
+		for ADDER in ${ADDERS}; do
+			PIPELINE_CMD=$(echo $ARGS | sed -e 's/ --/-/g' -e 's/--//')
+			VERILOG="generated/multiplier_${PROCESS}_${ADDER}_${PIPELINE_CMD}_8.v"
+			BINARY=multiply-adder-${PROCESS}-${ADDER}_${PIPELINE_CMD}_8
+			python3 multiplier.py --bits=8 --process=${PROCESS} --algorithm=${ADDER} --multiply-add ${ARGS} --output=${VERILOG}
+			verilator ${VERILATOR_OPTS} -CFLAGS "-O3 -DPIPELINE_DEPTH=${PIPELINE_DEPTH}" --assert --cc --exe --build ${VERILOG} ${PROCESS}/${PROCESS}.v verilator/multiplier.cpp -o ${BINARY} -top-module multiply_adder
+			TESTS="${TESTS} obj_dir/${BINARY}"
+		done
+	done
+}
 
-python3 multiplier.py --bits=8 --algorithm=brentkung --multiply-add --process=sky130 --register-output --output=generated/multiplier_sky130_16.v
-verilator -O3 -Wno-fatal -Wno-TIMESCALEMOD -CFLAGS "-O3 -DPIPELINE_DEPTH=1" --assert --cc --exe --build generated/multiplier_sky130_16.v sky130/sky130_fd_sc_hd_cutdown.v verilator/multiplier.cpp -o multiplier-verilator -top-module multiply_adder
-obj_dir/multiplier-verilator
+build_one_test 0 ""
+build_one_test 1 "--register-input"
+build_one_test 1 "--register-middle"
+build_one_test 1 "--register-output"
+build_one_test 2 "--register-input --register-middle"
+build_one_test 2 "--register-input --register-output"
+build_one_test 2 "--register-middle --register-output"
+build_one_test 3 "--register-input --register-middle --register-output"
 
-python3 multiplier.py --bits=8 --algorithm=koggestone --multiply-add --process=sky130 --register-input --register-middle --output=generated/multiplier_sky130_16.v
-verilator -O3 -Wno-fatal -Wno-TIMESCALEMOD -CFLAGS "-O3 -DPIPELINE_DEPTH=2" --assert --cc --exe --build generated/multiplier_sky130_16.v sky130/sky130_fd_sc_hd_cutdown.v verilator/multiplier.cpp -o multiplier-verilator -top-module multiply_adder
-obj_dir/multiplier-verilator
+# Run N in parallel
+N=4
+for TEST in ${TESTS}; do
+	echo $TEST
+	$TEST &
 
-python3 multiplier.py --bits=8 --algorithm=hancarlson --multiply-add --process=sky130 --register-input --register-output --output=generated/multiplier_sky130_16.v
-verilator -O3 -Wno-fatal -Wno-TIMESCALEMOD -CFLAGS "-O3 -DPIPELINE_DEPTH=2" --assert --cc --exe --build generated/multiplier_sky130_16.v sky130/sky130_fd_sc_hd_cutdown.v verilator/multiplier.cpp -o multiplier-verilator -top-module multiply_adder
-obj_dir/multiplier-verilator
-
-python3 multiplier.py --bits=8 --algorithm=brentkung --multiply-add --process=sky130 --register-middle --register-output --output=generated/multiplier_sky130_16.v
-verilator -O3 -Wno-fatal -Wno-TIMESCALEMOD -CFLAGS "-O3 -DPIPELINE_DEPTH=2" --assert --cc --exe --build generated/multiplier_sky130_16.v sky130/sky130_fd_sc_hd_cutdown.v verilator/multiplier.cpp -o multiplier-verilator -top-module multiply_adder
-obj_dir/multiplier-verilator
-
-python3 multiplier.py --bits=8 --algorithm=koggestone --multiply-add --process=sky130 --register-input --register-middle --register-output --output=generated/multiplier_sky130_16.v
-verilator -O3 -Wno-fatal -Wno-TIMESCALEMOD -CFLAGS "-O3 -DPIPELINE_DEPTH=3" --assert --cc --exe --build generated/multiplier_sky130_16.v sky130/sky130_fd_sc_hd_cutdown.v verilator/multiplier.cpp -o multiplier-verilator -top-module multiply_adder
-obj_dir/multiplier-verilator
+	if [[ $(jobs -r -p | wc -l) -ge $N ]]; then
+		wait -n
+	fi
+done
