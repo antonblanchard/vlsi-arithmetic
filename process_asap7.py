@@ -103,7 +103,6 @@ class ProcessASAP7(Elaboratable):
         )
         self.m.submodules += inv2
 
-
     # Used in adder
     def _generate_and21_or2(self, a1, a2, b1, o):
         # 2-input AND into first input of 2-input OR
