@@ -5,9 +5,9 @@ import argparse
 from amaranth import Elaboratable, Module, Signal, Const
 from amaranth.back import verilog
 
-from process_sky130hd import ProcessSKY130HD
-from process_asap7 import ProcessASAP7
-from process_none import ProcessNone
+from sky130hd.process import SKY130HDProcess
+from asap7.process import ASAP7Process
+from none.process import NoneProcess
 
 
 class AdderFramework(Elaboratable):
@@ -209,14 +209,14 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    process = ProcessNone
+    process = NoneProcess
     if args.process:
         if args.process == 'none':
-            process = ProcessNone
+            process = NoneProcess
         elif args.process == 'sky130hd':
-            process = ProcessSKY130HD
+            process = SKY130HDProcess
         elif args.process == 'asap7':
-            process = ProcessASAP7
+            process = ASAP7Process
         else:
             print("Unknown process")
             exit(1)

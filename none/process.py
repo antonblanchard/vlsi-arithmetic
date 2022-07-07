@@ -1,7 +1,7 @@
 from amaranth import Elaboratable, Cat
 
 
-class ProcessNone(Elaboratable):
+class NoneProcess(Elaboratable):
     def _generate_and(self, a, b, o):
         self.m.d.comb += o.eq(a & b)
 
