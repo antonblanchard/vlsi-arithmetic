@@ -104,7 +104,7 @@ class ASAP7Process(Elaboratable):
         self.m.submodules += inv2
 
     # Used in adder
-    def _generate_and21_or2(self, a1, a2, b1, o):
+    def _generate_ao21(self, a1, a2, b1, o):
         # 2-input AND into first input of 2-input OR
         a21o = self._PoweredInstance(
             "AO21x1_ASAP7_75t_R",
@@ -117,7 +117,7 @@ class ASAP7Process(Elaboratable):
         self.m.submodules += a21o
 
     # Used in multiplier
-    def _generate_and2_or2(self, a1, a2, b1, b2, o):
+    def _generate_ao22(self, a1, a2, b1, b2, o):
         # 2-input AND into both inputs of 2-input OR
         a22ogate = self._PoweredInstance(
             "AO22x1_ASAP7_75t_R",
@@ -131,7 +131,7 @@ class ASAP7Process(Elaboratable):
         self.m.submodules += a22ogate
 
     # Used in multiplier
-    def _generate_and32_or2(self, a1, a2, a3, b1, b2, o):
+    def _generate_ao32(self, a1, a2, a3, b1, b2, o):
         # 3-input AND into first input, and 2-input AND into 2nd input of 2-input OR
         a32ogate = self._PoweredInstance(
             "AO32x1_ASAP7_75t_R",

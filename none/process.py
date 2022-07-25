@@ -18,16 +18,16 @@ class NoneProcess(Elaboratable):
         self.m.d.comb += Cat(sum_out, carry_out).eq(a + b)
 
     # Used in adder
-    def _generate_and21_or2(self, a1, a2, b1, o):
+    def _generate_ao21(self, a1, a2, b1, o):
         # 2-input AND into first input of 2-input OR
         self.m.d.comb += o.eq((a1 & a2) | b1)
 
     # Used in multiplier
-    def _generate_and2_or2(self, a1, a2, b1, b2, o):
+    def _generate_ao22(self, a1, a2, b1, b2, o):
         # 2-input AND into both inputs of 2-input OR
         self.m.d.comb += o.eq((a1 & a2) | (b1 & b2))
 
     # Used in multiplier
-    def _generate_and32_or2(self, a1, a2, a3, b1, b2, o):
+    def _generate_ao32(self, a1, a2, a3, b1, b2, o):
         # 3-input AND into first input, and 2-input AND into 2nd input of 2-input OR
         self.m.d.comb += o.eq((a1 & a2 & a3) | (b1 & b2))

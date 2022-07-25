@@ -135,7 +135,7 @@ class BoothRadix4(Elaboratable):
         # (~block[2] & block[1] & block[0]) | (block[2] & ~block[1] & ~block[0])
         t = Signal()
         self._generate_and(block[2], notblock[1], t)
-        self._generate_and32_or2(notblock[2], block[1], block[0], t, notblock[0], sel_0)
+        self._generate_ao32(notblock[2], block[1], block[0], t, notblock[0], sel_0)
 
         # sel[1]:
         # ?01 | ?10
@@ -146,7 +146,7 @@ class BoothRadix4(Elaboratable):
     def _generate_booth_mux(self, multiplicand, sel, sign, o):
         # ((multiplicand[0] & sel[0]) | (multiplicand[1] & sel[1])) ^ sign
         t = Signal()
-        self._generate_and2_or2(multiplicand[0], sel[0], multiplicand[1], sel[1], t)
+        self._generate_ao22(multiplicand[0], sel[0], multiplicand[1], sel[1], t)
         self._generate_xor(t, sign, o)
 
     def _gen_partial_products(self):

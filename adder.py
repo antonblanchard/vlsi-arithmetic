@@ -88,7 +88,7 @@ class BrentKung(AdderFramework):
                 p_new = Signal()
                 g_new = Signal()
                 self._generate_and(self._p[bit_to], self._p[bit_from], p_new)
-                self._generate_and21_or2(self._p[bit_to], self._g[bit_from], self._g[bit_to], g_new)
+                self._generate_ao21(self._p[bit_to], self._g[bit_from], self._g[bit_to], g_new)
                 self._p[bit_to] = p_new
                 self._g[bit_to] = g_new
 
@@ -97,7 +97,7 @@ class BrentKung(AdderFramework):
             for bit_to in range(2**level + 2**(level - 1) - 1, self._bits, 2**level):
                 bit_from = bit_to - 2**(level - 1)
                 g_new = Signal()
-                self._generate_and21_or2(self._p[bit_to], self._g[bit_from], self._g[bit_to], g_new)
+                self._generate_ao21(self._p[bit_to], self._g[bit_from], self._g[bit_to], g_new)
                 self._g[bit_to] = g_new
 
 
@@ -112,7 +112,7 @@ class KoggeStone(AdderFramework):
                 p_new = Signal()
                 g_new = Signal()
                 self._generate_and(self._p[bit_from], self._p[bit_to], p_new)
-                self._generate_and21_or2(self._p[bit_to], self._g[bit_from], self._g[bit_to], g_new)
+                self._generate_ao21(self._p[bit_to], self._g[bit_from], self._g[bit_to], g_new)
                 self._p[bit_to] = p_new
                 self._g[bit_to] = g_new
 
@@ -132,7 +132,7 @@ class HanCarlson(AdderFramework):
                 p_new = Signal()
                 g_new = Signal()
                 self._generate_and(self._p[bit_from], self._p[bit_to], p_new)
-                self._generate_and21_or2(self._p[bit_to], self._g[bit_from], self._g[bit_to], g_new)
+                self._generate_ao21(self._p[bit_to], self._g[bit_from], self._g[bit_to], g_new)
                 self._p[bit_to] = p_new
                 self._g[bit_to] = g_new
 
@@ -140,7 +140,7 @@ class HanCarlson(AdderFramework):
         for bit_from in range(self._bits - 3, 0, -2):
             bit_to = bit_from + 1
             g_new = Signal()
-            self._generate_and21_or2(self._p[bit_to], self._g[bit_from], self._g[bit_to], g_new)
+            self._generate_ao21(self._p[bit_to], self._g[bit_from], self._g[bit_to], g_new)
             self._g[bit_to] = g_new
 
 
