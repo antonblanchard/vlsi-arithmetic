@@ -131,16 +131,17 @@ class ASAP7Process(Elaboratable):
         self.m.submodules += a22ogate
 
     # Used in multiplier
-    def _generate_ao32(self, a1, a2, a3, b1, b2, o):
-        # 3-input AND into first input, and 2-input AND into 2nd input of 2-input OR
-        a32ogate = self._PoweredInstance(
-            "AO32x1_ASAP7_75t_R",
+    def _generate_ao33(self, a1, a2, a3, b1, b2, b3, o):
+        # 3-input AND into both inputs of 2-input OR
+        ao33gate = self._PoweredInstance(
+            "AO33x2_ASAP7_75t_R",
             i_A1=a1,
             i_A2=a2,
             i_A3=a3,
             i_B1=b1,
             i_B2=b2,
+            i_B3=b3,
             o_Y=o
         )
 
-        self.m.submodules += a32ogate
+        self.m.submodules += ao33gate

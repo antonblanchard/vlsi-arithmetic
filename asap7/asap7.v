@@ -99,14 +99,14 @@ module AO22x1_ASAP7_75t_R (Y, A1, A2, B1, B2);
 
 endmodule
 
-module AO32x1_ASAP7_75t_R (Y, A1, A2, A3, B1, B2);
+module AO33x2_ASAP7_75t_R (Y, A1, A2, A3, B1, B2, B3);
 	output Y;
-	input A1, A2, A3, B1, B2;
+	input A1, A2, A3, B1, B2, B3;
 
 	// Function
 	wire int_fwire_0, int_fwire_1;
 
-	and (int_fwire_0, B1, B2);
+	and (int_fwire_0, B1, B2, B3);
 	and (int_fwire_1, A1, A2, A3);
 	or (Y, int_fwire_1, int_fwire_0);
 
