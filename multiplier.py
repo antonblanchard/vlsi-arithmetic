@@ -132,10 +132,18 @@ class BoothRadix4(Elaboratable):
 
         # sel[0]:
         # 011 | 100
-        # (~block[2] & block[1] & block[0]) | (block[2] & ~block[1] & ~block[0])
-        t = Signal()
-        self._generate_and(block[2], notblock[1], t)
-        self._generate_ao32(notblock[2], block[1], block[0], t, notblock[0], sel_0)
+        try:
+            # (notblock[2] & block[1] & block[0]) | (block[2] & notblock[1] & notblock[0])
+            self._generate_ao33(notblock[2], block[1], block[0], block[2], notblock[1], notblock[0], sel_0)
+        except AttributeError:
+            try:
+                # Also ~((block[2] | notblock[1] | notblock[0]) & (notblock[2] | block[1] | block[0]))
+                self._generate_oai33(block[2], notblock[1], notblock[0], notblock[2], block[1], block[0], sel_0)
+            except AttributeError:
+                # Fall back to ao32
+                t = Signal()
+                self._generate_and(block[2], notblock[1], t)
+                self._generate_ao32(notblock[2], block[1], block[0], t, notblock[0], sel_0)
 
         # sel[1]:
         # ?01 | ?10
