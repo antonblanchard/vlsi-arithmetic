@@ -139,8 +139,7 @@ class BoothRadix4(Elaboratable):
 
         # sel[1]:
         # ?01 | ?10
-        # (~block[1] & block[0]) | (block[1] & ~block[0])
-        self._generate_and2_or2(notblock[1], block[0], block[1], notblock[0], sel_1)
+        self._generate_xor(block[1], block[0], sel_1)
 
         self.m.d.comb += sel.eq(Cat(sel_0, sel_1))
 
