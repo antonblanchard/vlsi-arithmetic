@@ -7,6 +7,7 @@ from amaranth.back import verilog
 
 from sky130hd.process import SKY130HDProcess
 from asap7.process import ASAP7Process
+from gf180mcu.process import GF180MCUProcess
 from none.process import NoneProcess
 
 from adder import BrentKung, KoggeStone, HanCarlson, Inferred
@@ -310,7 +311,7 @@ if __name__ == "__main__":
                         help='Add power pins (VPWR/VGND)')
 
     parser.add_argument('--process',
-                        help='What process to build for (none (default), sky130hd, asap7)')
+                        help='What process to build for (none (default), sky130hd, asap7, gf180mcu)')
 
     parser.add_argument('--algorithm',
                         help='Adder algorithm (brentkung (default), koggestone, hancarlson, inferred)')
@@ -328,6 +329,8 @@ if __name__ == "__main__":
             process = SKY130HDProcess
         elif args.process == 'asap7':
             process = ASAP7Process
+        elif args.process == 'gf180mcu':
+            process = GF180MCUProcess
         else:
             print("Unknown process")
             exit(1)

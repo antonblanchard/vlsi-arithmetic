@@ -2,7 +2,7 @@
 
 mkdir -p generated
 
-PROCESSES="sky130hd asap7"
+PROCESSES="sky130hd asap7 gf180mcu"
 ADDERS="brentkung koggestone hancarlson"
 
 # Test adders
